@@ -32,6 +32,7 @@ defmodule MyApp.MySchema do
 end
 ```
 
+
 ## More Documentation
 
 See additional documentation, including guides, in the [Absinthe.Federation hexdocs](https://hexdocs.pm/absinthe_federation).
