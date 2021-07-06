@@ -1,4 +1,4 @@
-defmodule AbsintheFederation.MixProject do
+defmodule Absinthe.Federation.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/DivvyPayHQ/absinthe_federation"
