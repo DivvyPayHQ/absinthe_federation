@@ -14,7 +14,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
           name: String.t(),
           description: nil | String.t(),
           type: Blueprint.TypeReference.t(),
-          default_value: Blueprint.Input.t(),
+          default_value: nil | Blueprint.Input.t(),
           default_value_blueprint: Blueprint.Draft.t(),
           directives: [Blueprint.Directive.t()],
           source_location: nil | Blueprint.SourceLocation.t(),
@@ -94,7 +94,6 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       module: __MODULE__,
       name: "representations",
       placement: :argument_definition,
-      default_value: %Blueprint.Input.Null{},
       type: %NonNull{
         of_type: %List{
           of_type: %NonNull{
