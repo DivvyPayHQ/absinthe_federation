@@ -26,7 +26,7 @@ Install from github (necesary until package has been published):
 ```elixir
 def deps do
   [
-    {:absinthe_federation, github: "DivvyPayHQ/absinthe_federation", branch: "master"}
+    {:absinthe_federation, github: "DivvyPayHQ/absinthe_federation", branch: "main"}
   ]
 end
 ```
