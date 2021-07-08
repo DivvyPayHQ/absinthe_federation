@@ -18,7 +18,11 @@ defmodule Absinthe.Federation.MixProject do
       deps: deps(),
       dialyzer: [
         plt_add_apps: [:mix, :ex_unit],
-        plt_file: {:no_warn, "priv/plts/absinthe_federation.plt"}
+        plt_local_path: "priv/plts/local",
+        plt_core_path:
+          if Mix.env() == :test do
+            "priv/plts/core"
+          end
       ]
     ]
   end
@@ -58,7 +62,7 @@ defmodule Absinthe.Federation.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6.4"},
+      {:absinthe, github: "absinthe-graphql/absinthe"},
 
       # Dev
       {:dialyxir, "~> 1.0.0", only: [:dev, :test], runtime: false},

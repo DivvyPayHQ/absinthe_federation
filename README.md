@@ -26,7 +26,10 @@ Install from github (necesary until package has been published):
 ```elixir
 def deps do
   [
-    {:absinthe_federation, github: "DivvyPayHQ/absinthe_federation", branch: "master"}
+    # Necessary until new version is tagged with this change
+    # https://github.com/absinthe-graphql/absinthe/pull/1069
+    {:absinthe, github: "absinthe-graphql/absinthe", override: true},
+    {:absinthe_federation, github: "DivvyPayHQ/absinthe_federation", branch: "main"}
   ]
 end
 ```
