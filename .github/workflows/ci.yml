@@ -68,5 +68,5 @@ jobs:
 
       - name: Run dialyzer
         run: |
-          mkdir -p priv/plts
+          mkdir -p priv/plts/{local,core}
           MIX_ENV=test mix dialyzer

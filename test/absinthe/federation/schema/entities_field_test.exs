@@ -49,10 +49,26 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       query do
         field :test, :string
       end
+
+      object :product do
+        field :upc, non_null(:string)
+
+        field :_resolve_reference, :product do
+          resolve(fn _, args, _ -> {:ok, args} end)
+        end
+      end
     end
 
     test "forwards call to correct resolver" do
-      {:ok, %{}} = EntitiesField.resolver(%{}, %{}, %{schema: ResolverSchema})
+      upc = "123"
+      representation = %{"__typename" => "Product", "upc" => upc}
+
+      {:ok, [args]} =
+        EntitiesField.resolver(%{}, %{representations: [representation]}, %{
+          schema: ResolverSchema
+        })
+
+      assert args == %{__typename: "Product", upc: upc}
     end
   end
 

@@ -14,8 +14,31 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
       identifier: :_entity,
       module: __MODULE__,
       name: "_Entity",
-      types: types(blueprint)
+      types: types(blueprint),
+      resolve_type: &Absinthe.Federation.Schema.EntityUnion.resolve_type/2
     }
+  end
+
+  # TODO: This is a very naive approach to resolve the union type and should be replaced by something better
+  # Should the library consumer be required to define this union type since they will know how to resolve the types better than we can?
+  def resolve_type(%struct_name{}, _resolution) do
+    struct_name
+    |> Module.split()
+    |> List.last()
+    |> String.downcase()
+    |> String.to_existing_atom()
+  end
+
+  def resolve_type(%{__typename: typename}, _resolution) do
+    typename
+    |> Macro.underscore()
+    |> String.to_existing_atom()
+  end
+
+  def resolve_type(%{"__typename" => typename}, _resolution) do
+    typename
+    |> Macro.underscore()
+    |> String.to_existing_atom()
   end
 
   defp types(node) do

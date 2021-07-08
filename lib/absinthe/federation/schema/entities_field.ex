@@ -4,7 +4,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   alias Absinthe.Blueprint
   alias Absinthe.Blueprint.Schema.FieldDefinition
   alias Absinthe.Blueprint.Schema.InputValueDefinition
-  alias Absinthe.Blueprint.TypeReference.List
+  alias Absinthe.Blueprint.TypeReference.List, as: ListType
   alias Absinthe.Blueprint.TypeReference.Name
   alias Absinthe.Blueprint.TypeReference.NonNull
   alias Absinthe.Schema.Notation
@@ -70,7 +70,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       module: __MODULE__,
       name: "_entities",
       type: %NonNull{
-        of_type: %List{
+        of_type: %ListType{
           of_type: %Name{
             name: "_Entity"
           }
@@ -81,9 +81,65 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     }
   end
 
-  def resolver(_parent, _args, %{schema: _schema} = _resolution) do
-    {:ok, %{}}
+  def resolver(parent, %{representations: representations}, resolution) do
+    Enum.reduce_while(representations, {:ok, []}, &entity_accumulator(&1, &2, parent, resolution))
   end
+
+  defp entity_accumulator(representation, {:ok, entities}, parent, %{schema: schema} = resolution) do
+    typename = Map.get(representation, "__typename")
+
+    schema
+    |> Absinthe.Schema.lookup_type(typename)
+    |> resolve_representation(parent, representation, resolution)
+    |> case do
+      {:ok, entity} ->
+        {:cont, {:ok, entities ++ [entity]}}
+
+      {:error, _} = error ->
+        {:halt, error}
+    end
+  end
+
+  defp entity_accumulator(_representation, result, _parent, _schema), do: result
+
+  defp resolve_representation(
+         %struct_type{fields: fields},
+         parent,
+         representation,
+         resolution
+       )
+       when struct_type in [Absinthe.Type.Object, Absinthe.Type.Interface],
+       do: resolve_reference(fields[:_resolve_reference], parent, representation, resolution)
+
+  defp resolve_representation(_schema_type, _parent, representation, _schema),
+    do:
+      {:error,
+       "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
+
+  defp resolve_reference(nil, _parent, representation, _resolution), do: {:ok, representation}
+
+  defp resolve_reference(%{middleware: middleware}, parent, representation, %{schema: schema} = resolution) do
+    args = for {key, val} <- representation, into: %{}, do: {String.to_atom(key), val}
+
+    middleware
+    |> Absinthe.Middleware.unshim(schema)
+    |> Enum.filter(&only_resolver_middleware/1)
+    |> List.first()
+    |> case do
+      {_, resolve_ref_func} when is_function(resolve_ref_func, 2) ->
+        resolve_ref_func.(args, resolution)
+
+      {_, resolve_ref_func} when is_function(resolve_ref_func, 3) ->
+        resolve_ref_func.(parent, args, resolution)
+
+      _ ->
+        {:ok, representation}
+    end
+  end
+
+  defp only_resolver_middleware({{Absinthe.Resolution, :call}, _}), do: true
+
+  defp only_resolver_middleware(_), do: false
 
   defp build_arguments(), do: [build_argument()]
 
@@ -95,7 +151,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       name: "representations",
       placement: :argument_definition,
       type: %NonNull{
-        of_type: %List{
+        of_type: %ListType{
           of_type: %NonNull{
             of_type: %Name{
               name: "_Any"

@@ -39,6 +39,53 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
     end
   end
 
+  describe "resolve_type" do
+    defmodule ResolveTypeSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+      end
+
+      object :credit_application do
+        key_fields("id")
+        field :id, :string
+
+        field :_resolve_reference, :credit_application do
+          resolve(fn _, args, _ -> {:ok, args} end)
+        end
+      end
+
+      object :product do
+        key_fields("upc")
+        field :upc, :string
+
+        field :_resolve_reference, :product do
+          resolve(fn _, args, _ -> {:ok, args} end)
+        end
+      end
+    end
+
+    test "correct object type returned" do
+      query = """
+        {
+          _entities(representations: [{__typename: "CreditApplication", id: "123"}, {__typename: "Product", upc: "321"}]) {
+            ...on CreditApplication {
+              id
+            }
+            ...on Product {
+              upc
+            }
+          }
+        }
+      """
+
+      %{data: %{"_entities" => [credit_app, product]}} = Absinthe.run!(query, ResolveTypeSchema)
+      assert credit_app == %{"id" => "123"}
+      assert product == %{"upc" => "321"}
+    end
+  end
+
   describe "sdl" do
     defmodule SDLSchema do
       use Absinthe.Schema
