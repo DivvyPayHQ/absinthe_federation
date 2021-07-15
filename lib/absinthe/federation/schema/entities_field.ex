@@ -9,6 +9,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   alias Absinthe.Blueprint.TypeReference.NonNull
   alias Absinthe.Schema.Notation
 
+  alias Absinthe.Federation.Schema.Utils
+
   # TODO: Fix __reference__ typespec upstream in absinthe
   @type input_value_definition :: %InputValueDefinition{
           name: String.t(),
@@ -51,34 +53,40 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
           __private__: []
         }
 
-  @spec build() :: field_definition()
-  def build() do
-    %FieldDefinition{
-      __reference__: Notation.build_reference(__ENV__),
-      description: """
-      Returns a non-nullable list of _Entity types
-      and have a single argument with an argument name of representations
-      and type [_Any!]! (non-nullable list of non-nullable _Any scalars).
-      The _entities field on the query root must allow a list of _Any scalars
-      which are "representations" of entities from external services.
-      These representations should be validated with the following rules:
+  @spec build(Blueprint.t()) :: field_definition() | nil
+  def build(blueprint) do
+    case Utils.key_field_types(blueprint) do
+      [] ->
+        nil
 
-      - Any representation without a __typename: String field is invalid.
-      - Representations must contain at least the fields defined in the fieldset of a @key directive on the base type.
-      """,
-      identifier: :_entities,
-      module: __MODULE__,
-      name: "_entities",
-      type: %NonNull{
-        of_type: %ListType{
-          of_type: %Name{
-            name: "_Entity"
-          }
+      _found_types ->
+        %FieldDefinition{
+          __reference__: Notation.build_reference(__ENV__),
+          description: """
+          Returns a non-nullable list of _Entity types
+          and have a single argument with an argument name of representations
+          and type [_Any!]! (non-nullable list of non-nullable _Any scalars).
+          The _entities field on the query root must allow a list of _Any scalars
+          which are "representations" of entities from external services.
+          These representations should be validated with the following rules:
+
+          - Any representation without a __typename: String field is invalid.
+          - Representations must contain at least the fields defined in the fieldset of a @key directive on the base type.
+          """,
+          identifier: :_entities,
+          module: __MODULE__,
+          name: "_entities",
+          type: %NonNull{
+            of_type: %ListType{
+              of_type: %Name{
+                name: "_Entity"
+              }
+            }
+          },
+          middleware: [{Absinthe.Resolution, &__MODULE__.resolver/3}],
+          arguments: build_arguments()
         }
-      },
-      middleware: [{Absinthe.Resolution, &__MODULE__.resolver/3}],
-      arguments: build_arguments()
-    }
+    end
   end
 
   def resolver(parent, %{representations: representations}, resolution) do

@@ -14,29 +14,50 @@ defmodule Absinthe.Federation.Schema.Phase do
   @dialyzer {:nowarn_function, add_directive: 2}
 
   def run(%Blueprint{} = blueprint, _) do
-    blueprint = Blueprint.postwalk(blueprint, &collect_types/1)
+    blueprint = Blueprint.postwalk(blueprint, &collect_types(&1, blueprint))
     {:ok, blueprint}
   end
 
-  @spec collect_types(Blueprint.node_t()) :: Blueprint.node_t()
-  defp collect_types(%Schema.SchemaDefinition{type_definitions: type_definitions} = node) do
-    entity_union = EntityUnion.build(node)
+  @spec collect_types(Blueprint.node_t(), Blueprint.t()) :: Blueprint.node_t()
+  defp collect_types(%Schema.SchemaDefinition{type_definitions: type_definitions} = node, blueprint) do
+    case EntityUnion.build(blueprint) do
+      nil ->
+        node
 
-    %{node | type_definitions: [entity_union | type_definitions]}
+      entity_union ->
+        %{node | type_definitions: [entity_union | type_definitions]}
+    end
   end
 
-  defp collect_types(%Schema.ObjectTypeDefinition{identifier: :query, fields: fields} = node) do
-    service_field = ServiceField.build()
-    entities_field = EntitiesField.build()
-    %{node | fields: [service_field, entities_field] ++ fields}
+  defp collect_types(%Schema.ObjectTypeDefinition{identifier: :query, fields: fields} = node, blueprint) do
+    new_fields =
+      fields
+      |> add_service_field()
+      |> maybe_add_entities_field(blueprint)
+
+    %{node | fields: new_fields}
   end
 
-  defp collect_types(%{__private__: _private} = node) do
+  defp collect_types(%{__private__: _private} = node, _) do
     meta = Type.meta(node)
     maybe_add_directives(node, meta)
   end
 
-  defp collect_types(node), do: node
+  defp collect_types(node, _), do: node
+
+  defp add_service_field(fields) do
+    [ServiceField.build() | fields]
+  end
+
+  defp maybe_add_entities_field(fields, node) do
+    case EntitiesField.build(node) do
+      nil ->
+        fields
+
+      entities_field ->
+        [entities_field | fields]
+    end
+  end
 
   @spec maybe_add_directives(term(), any()) :: term()
   defp maybe_add_directives(node, meta) do

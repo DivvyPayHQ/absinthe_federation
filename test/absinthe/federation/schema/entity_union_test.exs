@@ -8,8 +8,15 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
   describe "build" do
     defmodule EntityUnionSchema do
       use Absinthe.Schema
+      use Absinthe.Federation.Schema
 
       query do
+        field :user, :user
+      end
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
       end
     end
 
@@ -35,7 +42,9 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
     test "builds field definition with type", %{blueprint: blueprint} do
       union_type_definition = EntityUnion.build(blueprint)
 
-      assert union_type_definition.types == []
+      assert union_type_definition.types == [
+               %Absinthe.Blueprint.TypeReference.Name{errors: [], name: "User", schema_node: nil}
+             ]
     end
   end
 
@@ -87,7 +96,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
   end
 
   describe "sdl" do
-    defmodule SDLSchema do
+    defmodule SDLWithKeyFieldsSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -103,11 +112,13 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
     end
 
     test "renders union correctly in sdl based schema" do
-      sdl = Absinthe.Schema.to_sdl(SDLSchema)
+      sdl = Absinthe.Schema.to_sdl(SDLWithKeyFieldsSchema)
       assert sdl =~ "union _Entity = User"
     end
+  end
 
-    defmodule MacroSchema do
+  describe "macro" do
+    defmodule MacroWithKeyFieldsSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -121,9 +132,27 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       end
     end
 
-    test "renders union correctly in macro based schema" do
-      sdl = Absinthe.Schema.to_sdl(MacroSchema)
+    test "renders union correctly in macro based schema with @key types" do
+      sdl = Absinthe.Schema.to_sdl(MacroWithKeyFieldsSchema)
       assert sdl =~ "union _Entity = User"
+    end
+
+    defmodule MacroWithoutKeyFields do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :me, :user
+      end
+
+      object :user do
+        field :id, non_null(:id)
+      end
+    end
+
+    test "renders no union in schema without @key types" do
+      sdl = Absinthe.Schema.to_sdl(MacroWithoutKeyFields)
+      refute sdl =~ "union _Entity = User"
     end
   end
 end

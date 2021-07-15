@@ -8,23 +8,40 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
   alias Absinthe.Federation.Schema.EntitiesField
 
-  describe "build" do
-    test "builds field definition" do
-      assert %FieldDefinition{} = EntitiesField.build()
+  defmodule EntitiesSchema do
+    use Absinthe.Schema
+    use Absinthe.Federation.Schema
+
+    query do
     end
 
-    test "builds field definition with name" do
-      field_definition = EntitiesField.build()
+    object :foo do
+      key_fields("id")
+      field :id, :id
+    end
+  end
+
+  setup do
+    {:ok, blueprint: EntitiesSchema.__absinthe_blueprint__()}
+  end
+
+  describe "build" do
+    test "builds field definition", %{blueprint: blueprint} do
+      assert %FieldDefinition{} = EntitiesField.build(blueprint)
+    end
+
+    test "builds field definition with name", %{blueprint: blueprint} do
+      field_definition = EntitiesField.build(blueprint)
       assert field_definition.name == "_entities"
     end
 
-    test "builds field definition with identifier" do
-      field_definition = EntitiesField.build()
+    test "builds field definition with identifier", %{blueprint: blueprint} do
+      field_definition = EntitiesField.build(blueprint)
       assert field_definition.identifier == :_entities
     end
 
-    test "builds field definition with type" do
-      field_definition = EntitiesField.build()
+    test "builds field definition with type", %{blueprint: blueprint} do
+      field_definition = EntitiesField.build(blueprint)
 
       assert %NonNull{
                of_type: %List{
@@ -35,8 +52,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
              } = field_definition.type
     end
 
-    test "builds field definition with middleware" do
-      field_definition = EntitiesField.build()
+    test "builds field definition with middleware", %{blueprint: blueprint} do
+      field_definition = EntitiesField.build(blueprint)
       assert Enum.count(field_definition.middleware) == 1
     end
   end
@@ -73,18 +90,41 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
   end
 
   describe "sdl" do
-    defmodule SDLSchema do
+    defmodule SDLWithKeyFieldsSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :user, :user
+      end
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+      end
+    end
+
+    test "renders correctly in sdl with @key" do
+      sdl = Absinthe.Schema.to_sdl(SDLWithKeyFieldsSchema)
+      assert sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
+    end
+
+    defmodule SDLWithoutKeyFieldsSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
       query do
         field :test, :string
       end
+
+      object :user do
+        field :id, non_null(:id)
+      end
     end
 
-    test "renders correctly in sdl" do
-      sdl = Absinthe.Schema.to_sdl(SDLSchema)
-      assert sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
+    test "does not render in sdl without @key" do
+      sdl = Absinthe.Schema.to_sdl(SDLWithoutKeyFieldsSchema)
+      refute sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
     end
   end
 end
