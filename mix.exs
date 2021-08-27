@@ -62,7 +62,7 @@ defmodule Absinthe.Federation.MixProject do
 
   defp deps do
     [
-      {:absinthe, github: "absinthe-graphql/absinthe"},
+      {:absinthe, "~> 1.6.5"},
 
       # Dev
       {:dialyxir, "~> 1.0.0", only: [:dev, :test], runtime: false},
