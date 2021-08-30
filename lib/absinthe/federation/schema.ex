@@ -1,5 +1,18 @@
 defmodule Absinthe.Federation.Schema do
-  @moduledoc false
+  @moduledoc """
+  Module for injecting custom `Absinthe.Phase`s for adding federated types and directives.
+
+  ## Example
+
+      defmodule MyApp.MySchema do
+        use Absinthe.Schema
+      + use Absinthe.Federation.Schema
+
+        query do
+          ...
+        end
+      end
+  """
 
   alias Absinthe.Phase.Schema.TypeImports
   alias Absinthe.Pipeline
@@ -18,6 +31,9 @@ defmodule Absinthe.Federation.Schema do
     end
   end
 
+  @doc """
+  Injects custom compile-time `Absinthe.Phase`
+  """
   def pipeline(pipeline) do
     pipeline
     |> Pipeline.insert_after(TypeImports, __MODULE__.Phase)

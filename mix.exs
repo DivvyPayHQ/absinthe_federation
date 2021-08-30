@@ -45,8 +45,9 @@ defmodule Absinthe.Federation.MixProject do
   defp docs do
     [
       source_ref: "v#{@version}",
-      main: "Absinthe.Federation",
-      source_url: @source_url
+      main: "README",
+      source_url: @source_url,
+      extras: ["README.md", "CONTRIBUTING.md", "LICENSE.md", "CODE_OF_CONDUCT.md"]
     ]
   end
 
@@ -66,7 +67,7 @@ defmodule Absinthe.Federation.MixProject do
 
       # Dev
       {:dialyxir, "~> 1.0.0", only: [:dev, :test], runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev}
+      {:ex_doc, "~> 0.24", only: :dev, runtime: false}
     ]
   end
 end
