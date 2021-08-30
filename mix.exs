@@ -45,7 +45,7 @@ defmodule Absinthe.Federation.MixProject do
   defp docs do
     [
       source_ref: "v#{@version}",
-      main: "README",
+      main: "readme",
       source_url: @source_url,
       extras: ["README.md", "CONTRIBUTING.md", "LICENSE.md", "CODE_OF_CONDUCT.md"]
     ]
