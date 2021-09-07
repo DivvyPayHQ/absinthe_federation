@@ -8,6 +8,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
   alias Absinthe.Federation.Schema.EntitiesField
 
+  import Absinthe.Resolution.Helpers, only: [async: 1]
+
   describe "build" do
     test "builds field definition" do
       assert %FieldDefinition{} = EntitiesField.build()
@@ -51,24 +53,45 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       end
 
       object :product do
+        key_fields("upc")
         field :upc, non_null(:string)
+        field :apa, non_null(:string), resolve: fn _, _, _ -> {:ok, "BANANA"} end
 
         field :_resolve_reference, :product do
-          resolve(fn _, args, _ -> {:ok, args} end)
+          resolve(fn _, args, _ ->
+            async(fn _ ->
+              {:ok, args}
+            end)
+          end)
         end
       end
     end
 
-    test "forwards call to correct resolver" do
-      upc = "123"
-      representation = %{"__typename" => "Product", "upc" => upc}
+    test "resolves all types fulfilling the _Entity type" do
+      query = """
+        query{
+          _entities(representations:[
+            {
+              __typename: "Product",
+              upc: "123"
+            },
+            {
+              __typename: "Product",
+              upc: "456"
+            }
+            ]){
+              ...on Product{
+                upc
+                apa
+              }
+          }
+        }
+      """
 
-      {:ok, [args]} =
-        EntitiesField.resolver(%{}, %{representations: [representation]}, %{
-          schema: ResolverSchema
-        })
+      {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
 
-      assert args == %{__typename: "Product", upc: upc}
+      assert %{data: %{"_entities" => [%{"upc" => "123", "apa" => "BANANA"}, %{"apa" => "BANANA", "upc" => "456"}]}} =
+               resp
     end
   end
 
