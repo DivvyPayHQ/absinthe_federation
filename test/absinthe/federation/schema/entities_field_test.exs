@@ -55,7 +55,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       object :product do
         key_fields("upc")
         field :upc, non_null(:string)
-        field :apa, non_null(:string), resolve: fn _, _, _ -> {:ok, "BANANA"} end
+        field :foo, non_null(:string), resolve: fn _, _, _ -> {:ok, "bar"} end
 
         field :_resolve_reference, :product do
           resolve(fn _, args, _ ->
@@ -82,7 +82,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
             ]){
               ...on Product{
                 upc
-                apa
+                foo
               }
           }
         }
@@ -90,8 +90,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
       {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
 
-      assert %{data: %{"_entities" => [%{"upc" => "123", "apa" => "BANANA"}, %{"apa" => "BANANA", "upc" => "456"}]}} =
-               resp
+      assert %{data: %{"_entities" => [%{"upc" => "123", "foo" => "bar"}, %{"foo" => "bar", "upc" => "456"}]}} = resp
     end
   end
 

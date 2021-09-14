@@ -84,16 +84,19 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   def call(%{state: :unresolved} = res, _args) do
     resolutions = resolver(res.source, res.arguments, res)
 
-    value = Enum.uniq_by(resolutions, fn %{middleware: [middleware | _remaining_middleware]} = r ->
-      case middleware do
-        {Absinthe.Middleware.Dataloader, {loader, _fun}} ->
-          {source, _} = find_relevant_dataloader(loader)
-          source
-        _ -> r
-      end
-    end)
-    |> Enum.map(fn r -> reduce_resolution(r) end)
-    |> List.flatten()
+    value =
+      Enum.uniq_by(resolutions, fn %{middleware: [middleware | _remaining_middleware]} = r ->
+        case middleware do
+          {Absinthe.Middleware.Dataloader, {loader, _fun}} ->
+            {source, _} = find_relevant_dataloader(loader)
+            source
+
+          _ ->
+            r
+        end
+      end)
+      |> Enum.map(&reduce_resolution/1)
+      |> List.flatten()
 
     %{
       res
@@ -102,19 +105,21 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     }
   end
 
+  def call(res, _args), do: res
+
   def resolver(parent, %{representations: representations}, resolution) do
     Enum.map(representations, &entity_accumulator(&1, parent, resolution))
-    |> Enum.map(fn fun ->
-      Absinthe.Resolution.call(resolution, fun)
-    end)
   end
 
   defp entity_accumulator(representation, parent, %{schema: schema} = resolution) do
     typename = Map.get(representation, "__typename")
 
-    schema
-    |> Absinthe.Schema.lookup_type(typename)
-    |> resolve_representation(parent, representation, resolution)
+    fun =
+      schema
+      |> Absinthe.Schema.lookup_type(typename)
+      |> resolve_representation(parent, representation, resolution)
+
+    Absinthe.Resolution.call(resolution, fun)
   end
 
   defp resolve_representation(
@@ -184,36 +189,47 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     call_middleware(middleware, %{res | middleware: remaining_middleware})
   end
 
-  defp call_middleware({Absinthe.Middleware.Dataloader, {loader, _fun}}, res) do
+  defp call_middleware({Absinthe.Middleware.Dataloader, {loader, _fun}}, %{
+         arguments: %{representations: args},
+         schema: schema
+       }) do
     {source, typename} = find_relevant_dataloader(loader)
-    args = get_in(res,
-    [
-      Access.key(:arguments),
-      Access.key(:representations)
-    ])
-    ids = args
-    |> Enum.reject(fn arg ->
-      Map.get(arg, "__typename") != typename
-    end)
-    |> Enum.map(fn arg -> Map.get(arg, "id") end)
-    loader = Dataloader.load_many(loader, source, %{__typename: typename}, ids)
 
-    loader = Dataloader.run(loader)
-    Dataloader.get_many(loader, source, %{__typename: typename}, ids)
+    key_field =
+      Absinthe.Schema.lookup_type(schema, typename)
+      |> Absinthe.Type.meta()
+      |> Map.get(:key_fields, "id")
+
+    ids =
+      args
+      |> Enum.reject(fn arg ->
+        Map.get(arg, "__typename") != typename
+      end)
+      |> Enum.map(fn arg -> Map.get(arg, key_field) end)
+
+    loader
+    |> Dataloader.load_many(source, %{__typename: typename}, ids)
+    |> Dataloader.run()
+    |> Dataloader.get_many(source, %{__typename: typename}, ids)
     |> Enum.map(fn {_, data} -> data end)
   end
 
   defp call_middleware({_mod, {fun, args}}, _res) do
-    {:ok, res} = fun.(args)
-    res
+    with {:ok, res} <- fun.(args) do
+      res
+    else
+      _ -> %{}
+    end
   end
 
   defp find_relevant_dataloader(%Dataloader{sources: sources}) do
-    {source, loader} = Enum.find(sources, fn {_, %Dataloader.KV{batches: batches}} ->
-      length(Map.values(batches)) > 0
-    end)
-    %Dataloader.KV{batches: batches} = loader
-    {:_entities, v} = batches |> Map.keys |> List.first
-    {source, Map.get(v, :__typename)}
+    {source, loader} =
+      Enum.find(sources, fn {_, %{batches: batches}} ->
+        length(Map.values(batches)) > 0
+      end)
+
+    %{batches: batches} = loader
+    {:_entities, representation} = batches |> Map.keys() |> List.first()
+    {source, Map.get(representation, :__typename)}
   end
 end
