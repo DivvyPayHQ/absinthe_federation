@@ -15,7 +15,7 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
       module: __MODULE__,
       name: "_Entity",
       types: types(blueprint),
-      resolve_type: &Absinthe.Federation.Schema.EntityUnion.resolve_type/2
+      resolve_type: &__MODULE__.resolve_type/2
     }
   end
 
