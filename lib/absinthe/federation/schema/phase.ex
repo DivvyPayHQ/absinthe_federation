@@ -7,7 +7,6 @@ defmodule Absinthe.Federation.Schema.Phase do
   alias Absinthe.Blueprint.Schema
   alias Absinthe.Federation.Schema.Directive
   alias Absinthe.Federation.Schema.EntitiesField
-  alias Absinthe.Federation.Schema.EntityUnion
   alias Absinthe.Federation.Schema.ServiceField
   alias Absinthe.Type
 
@@ -19,12 +18,6 @@ defmodule Absinthe.Federation.Schema.Phase do
   end
 
   @spec collect_types(Blueprint.node_t()) :: Blueprint.node_t()
-  defp collect_types(%Schema.SchemaDefinition{type_definitions: type_definitions} = node) do
-    entity_union = EntityUnion.build(node)
-
-    %{node | type_definitions: [entity_union | type_definitions]}
-  end
-
   defp collect_types(%Schema.ObjectTypeDefinition{identifier: :query, fields: fields} = node) do
     service_field = ServiceField.build()
     entities_field = EntitiesField.build()

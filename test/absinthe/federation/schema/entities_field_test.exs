@@ -46,6 +46,11 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
+      entity do
+        types [:product]
+        resolve_type fn _, _ -> :product end
+      end
+
       query do
         field :test, :string
       end
@@ -76,6 +81,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
     defmodule SDLSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
+
+      entity()
 
       query do
         field :test, :string

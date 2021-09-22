@@ -59,6 +59,8 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
+      entity()
+
       query do
         field :test, :string
       end
@@ -74,6 +76,8 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
     defmodule TestSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
+
+      entity()
 
       query do
       end

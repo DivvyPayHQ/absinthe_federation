@@ -6,6 +6,11 @@ defmodule Absinthe.Federation.NotationTest do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
+      entity do
+        types [:user]
+        resolve_type fn _, _ -> :user end
+      end
+
       query do
         field :me, :user
       end

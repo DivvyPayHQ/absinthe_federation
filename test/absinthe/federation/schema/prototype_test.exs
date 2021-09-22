@@ -15,6 +15,8 @@ defmodule Absinthe.Federation.Schema.PrototypeTest do
         id: ID! @external
         name: String
       }
+
+      union _Entity = User
       """
     end
 

@@ -193,4 +193,24 @@ defmodule Absinthe.Federation.Notation do
       meta :extends, true
     end
   end
+
+  @doc """
+  This should be a union of all types that use the @key directive, including both types native to the schema and extended types.
+  """
+  defmacro entity do
+    create_entity_union(nil)
+  end
+
+  defmacro entity(do: block) do
+    create_entity_union(block)
+  end
+
+  defp create_entity_union(block) do
+    quote do
+      union :_entity do
+        description "a union of all types that use the @key directive"
+        unquote(block)
+      end
+    end
+  end
 end
