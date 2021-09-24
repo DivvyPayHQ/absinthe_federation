@@ -11,17 +11,15 @@
 
 Install from [Hex.pm](https://hex.pm/packages/absinthe_federation):
 
-NOTE: Not published to Hex registry yet
-
 ```elixir
 def deps do
   [
-    {:absinthe_federation, "~> 0.1.0"}
+    {:absinthe_federation, "~> 0.1.1"}
   ]
 end
 ```
 
-Install from github (necesary until package has been published):
+Install from github:
 
 ```elixir
 def deps do
