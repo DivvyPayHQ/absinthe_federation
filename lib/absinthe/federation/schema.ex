@@ -36,6 +36,7 @@ defmodule Absinthe.Federation.Schema do
   """
   def pipeline(pipeline) do
     pipeline
-    |> Pipeline.insert_after(TypeImports, __MODULE__.Phase)
+    |> Pipeline.insert_after(TypeImports, __MODULE__.Phase.AddFederatedDirectives)
+    |> Pipeline.insert_after(TypeImports, __MODULE__.Phase.AddFederatedTypes)
   end
 end
