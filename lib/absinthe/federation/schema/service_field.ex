@@ -3,7 +3,6 @@ defmodule Absinthe.Federation.Schema.ServiceField do
 
   alias Absinthe.Blueprint.Schema.FieldDefinition
   alias Absinthe.Blueprint.TypeReference.NonNull
-  alias Absinthe.Schema
   alias Absinthe.Schema.Notation
 
   def build() do
@@ -27,6 +26,6 @@ defmodule Absinthe.Federation.Schema.ServiceField do
   end
 
   def resolver(_parent, _args, %{schema: schema} = _resolution) do
-    {:ok, %{sdl: Schema.to_sdl(schema)}}
+    {:ok, %{sdl: Absinthe.Federation.to_federated_sdl(schema)}}
   end
 end

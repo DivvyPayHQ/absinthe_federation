@@ -76,6 +76,15 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       use Absinthe.Federation.Schema
 
       query do
+        field :current_user, :user
+      end
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :_resolve_reference, :user do
+        end
       end
     end
 
@@ -96,7 +105,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       refute is_nil(sdl)
     end
 
-    test "returns proper sdl" do
+    test "returns sdl with federated types/fields removed" do
       query = """
       {
         _service {
@@ -107,7 +116,9 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
 
       assert %{data: %{"_service" => %{"sdl" => sdl}}} = Absinthe.run!(query, TestSchema)
 
-      assert sdl =~ "_service: _Service"
+      assert sdl =~ "query: RootQueryType"
+      refute sdl =~ "_service: _Service"
+      refute sdl =~ "_resolveReference"
     end
   end
 end

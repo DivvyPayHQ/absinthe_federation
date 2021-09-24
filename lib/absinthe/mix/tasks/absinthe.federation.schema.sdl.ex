@@ -46,11 +46,7 @@ defmodule Mix.Tasks.Absinthe.Federation.Schema.Sdl do
   end
 
   def generate_schema(%Options{schema: schema}) do
-    pipeline =
-      schema
-      |> Absinthe.Pipeline.for_schema(prototype_schema: schema.__absinthe_prototype_schema__())
-      |> Absinthe.Pipeline.upto({Absinthe.Phase.Schema.Validation.Result, pass: :final})
-      |> Absinthe.Schema.apply_modifiers(schema)
+    pipeline = Absinthe.Federation.remove_federated_types_pipeline(schema)
 
     with {:ok, blueprint, _phases} <-
            Absinthe.Pipeline.run(
