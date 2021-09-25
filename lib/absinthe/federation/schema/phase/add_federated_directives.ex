@@ -32,10 +32,16 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   end
 
   @spec maybe_add_key_directive(term(), map()) :: term()
-  defp maybe_add_key_directive(node, %{key_fields: fields}) do
+  defp maybe_add_key_directive(node, %{key_fields: fields}) when is_binary(fields) do
     directive = Directive.build("key", fields: fields)
 
     add_directive(node, directive)
+  end
+
+  defp maybe_add_key_directive(node, %{key_fields: fields}) when is_list(fields) do
+    fields
+    |> Enum.map(&Directive.build("key", fields: &1))
+    |> Enum.reduce(node, &add_directive(&2, &1))
   end
 
   defp maybe_add_key_directive(node, _meta), do: node
