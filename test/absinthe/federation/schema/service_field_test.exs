@@ -54,8 +54,8 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
     end
   end
 
-  describe "sdl" do
-    defmodule SDLSchema do
+  describe "macro schema" do
+    defmodule MacroSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -65,8 +65,32 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
     end
 
     test "renders correctly in sdl" do
-      sdl = Absinthe.Schema.to_sdl(SDLSchema)
+      sdl = Absinthe.Schema.to_sdl(MacroSchema)
       assert sdl =~ "_service: _Service!"
+    end
+  end
+
+  describe "sdl schema" do
+    defmodule SDLSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      import_sdl """
+      type Query {
+        currentUser: User
+      }
+
+      type User @key(fields: "id") @key(fields: "email") {
+        id: ID!
+        email: String!
+      }
+      """
+    end
+
+    test "renders multiple @key" do
+      sdl = Absinthe.Schema.to_sdl(SDLSchema)
+      assert sdl =~ "@key(fields: \"id\")"
+      assert sdl =~ "@key(fields: \"email\")"
     end
   end
 
@@ -80,8 +104,9 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       end
 
       object :user do
-        key_fields("id")
+        key_fields(["id", "email"])
         field :id, non_null(:id)
+        field :email, non_null(:string)
 
         field :_resolve_reference, :user do
         end
@@ -117,6 +142,8 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       assert %{data: %{"_service" => %{"sdl" => sdl}}} = Absinthe.run!(query, TestSchema)
 
       assert sdl =~ "query: RootQueryType"
+      assert sdl =~ "@key(fields: \"id\")"
+      assert sdl =~ "@key(fields: \"email\")"
       refute sdl =~ "_service: _Service"
       refute sdl =~ "_resolveReference"
     end

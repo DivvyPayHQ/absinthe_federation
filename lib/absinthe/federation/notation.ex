@@ -42,7 +42,7 @@ defmodule Absinthe.Federation.Notation do
         id: ID!
       }
   """
-  defmacro key_fields(fields) when is_binary(fields) do
+  defmacro key_fields(fields) when is_binary(fields) or is_list(fields) do
     quote do
       meta :key_fields, unquote(fields)
     end
