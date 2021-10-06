@@ -7,6 +7,8 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
   alias Absinthe.Schema.Notation
   alias Absinthe.Type
 
+  require Protocol
+
   def build(blueprint) do
     %UnionTypeDefinition{
       __reference__: Notation.build_reference(__ENV__),
@@ -19,26 +21,8 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
     }
   end
 
-  # TODO: This is a very naive approach to resolve the union type and should be replaced by something better
-  # Should the library consumer be required to define this union type since they will know how to resolve the types better than we can?
-  def resolve_type(%struct_name{}, _resolution) do
-    struct_name
-    |> Module.split()
-    |> List.last()
-    |> String.downcase()
-    |> String.to_existing_atom()
-  end
-
-  def resolve_type(%{__typename: typename}, _resolution) do
-    typename
-    |> Macro.underscore()
-    |> String.to_existing_atom()
-  end
-
-  def resolve_type(%{"__typename" => typename}, _resolution) do
-    typename
-    |> Macro.underscore()
-    |> String.to_existing_atom()
+  def resolve_type(map, resolution) do
+    Absinthe.Federation.Schema.EntityUnion.Resolver.resolve_type(map, resolution)
   end
 
   defp types(node) do
@@ -70,4 +54,31 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
 
   defp is_key_directive?(%{name: "key"} = _directive), do: true
   defp is_key_directive?(_directive), do: false
+end
+
+defprotocol Absinthe.Federation.Schema.EntityUnion.Resolver do
+  @fallback_to_any true
+  def resolve_type(map, resolution)
+end
+
+defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
+  def resolve_type(%struct_name{}, _resolution) do
+    struct_name
+    |> Module.split()
+    |> List.last()
+    |> String.downcase()
+    |> String.to_existing_atom()
+  end
+
+  def resolve_type(%{__typename: typename}, _resolution) do
+    typename
+    |> Macro.underscore()
+    |> String.to_existing_atom()
+  end
+
+  def resolve_type(%{"__typename" => typename}, _resolution) do
+    typename
+    |> Macro.underscore()
+    |> String.to_existing_atom()
+  end
 end
