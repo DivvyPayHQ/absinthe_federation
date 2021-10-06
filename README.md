@@ -103,6 +103,22 @@ defmodule MyApp.MySchema do
   end
 ```
 
+### Resolving structs in _entities queries
+If you need to resolve your struct to a specific type in your schema you can implement the `Absinthe.Federation.Schema.EntityUnion.Resolver` protocol like this:
+```elixir
+defmodule StructName do
+  @type t :: %__MODULE__{
+          id: String.t()
+        }
+
+  defstruct id: ""
+
+  defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
+    def resolve_type(_, _), do: :struct_name
+  end
+end
+```
+
 ## More Documentation
 
 See additional documentation, including guides, in the [Absinthe.Federation hexdocs](https://hexdocs.pm/absinthe_federation).
