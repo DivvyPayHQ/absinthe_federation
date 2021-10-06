@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Feature: [Improved _Entity resolve_type](https://github.com/DivvyPayHQ/absinthe_federation/pull/26) 
+
 ## 0.1.2
 
 - Feature: [Support multiple @key directives on type](https://github.com/DivvyPayHQ/absinthe_federation/pull/24) 
