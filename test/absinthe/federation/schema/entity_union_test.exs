@@ -64,25 +64,38 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
           resolve(fn _, args, _ -> {:ok, args} end)
         end
       end
+
+      object :spec_item do
+        key_fields("id")
+        field :id, :string
+
+        field :_resolve_reference, :spec_item do
+          resolve(fn _, %{id: id}, _ -> {:ok, %SpecItem{id: id}} end)
+        end
+      end
     end
 
     test "correct object type returned" do
       query = """
         {
-          _entities(representations: [{__typename: "CreditApplication", id: "123"}, {__typename: "Product", upc: "321"}]) {
+          _entities(representations: [{__typename: "CreditApplication", id: "123"}, {__typename: "Product", upc: "321"}, {__typename: "SpecItem", id: "456"}]) {
             ...on CreditApplication {
               id
             }
             ...on Product {
               upc
             }
+            ...on SpecItem {
+              id
+            }
           }
         }
       """
 
-      %{data: %{"_entities" => [credit_app, product]}} = Absinthe.run!(query, ResolveTypeSchema)
+      %{data: %{"_entities" => [credit_app, product, spec_item]}} = Absinthe.run!(query, ResolveTypeSchema)
       assert credit_app == %{"id" => "123"}
       assert product == %{"upc" => "321"}
+      assert spec_item == %{"id" => "456"}
     end
   end
 
