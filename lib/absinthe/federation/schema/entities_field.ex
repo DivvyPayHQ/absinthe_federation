@@ -81,8 +81,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     }
   end
 
-  def call(%{state: :unresolved} = res, _args) do
-    resolutions = resolver(res.source, res.arguments, res)
+  def call(%{state: :unresolved} = resolution, _args) do
+    resolutions = resolver(resolution.source, resolution.arguments, resolution)
 
     value =
       Enum.uniq_by(resolutions, fn %{middleware: [middleware | _remaining_middleware]} = r ->
@@ -98,10 +98,20 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       |> Enum.map(&reduce_resolution/1)
       |> List.flatten()
 
+    res =
+      value
+      |> Enum.reduce(%{errors: [], value: []}, fn r, acc ->
+        case r do
+          {:error, err} -> Map.update(acc, :errors, [], fn v -> v ++ [err] end)
+          value -> Map.update(acc, :value, [], fn v -> v ++ [value] end)
+        end
+      end)
+
     %{
-      res
+      resolution
       | state: :resolved,
-        value: value
+        errors: Map.get(res, :errors),
+        value: Map.get(res, :value)
     }
   end
 
@@ -211,7 +221,12 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     |> Dataloader.load_many(source, %{__typename: typename}, ids)
     |> Dataloader.run()
     |> Dataloader.get_many(source, %{__typename: typename}, ids)
-    |> Enum.map(fn {_, data} -> data end)
+    |> Enum.map(fn res ->
+      case res do
+        {:ok, data} -> data
+        {:error, _} = e -> e
+      end
+    end)
   end
 
   defp call_middleware({_mod, {fun, args}}, _res) do

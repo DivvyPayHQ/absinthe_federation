@@ -1,9 +1,9 @@
 defmodule SpecItem do
   @type t :: %__MODULE__{
-          id: String.t()
+          item_id: String.t()
         }
 
-  defstruct id: ""
+  defstruct item_id: ""
 
   defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
     def resolve_type(_, _) do
