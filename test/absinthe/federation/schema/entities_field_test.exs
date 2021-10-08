@@ -58,9 +58,13 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
         field :foo, non_null(:string), resolve: fn _, _, _ -> {:ok, "bar"} end
 
         field :_resolve_reference, :product do
-          resolve(fn _, args, _ ->
+          resolve(fn _, %{upc: upc} = args, _ ->
             async(fn _ ->
-              {:ok, args}
+              case upc do
+                "123" -> {:ok, args}
+                "456" -> {:ok, args}
+                _ -> {:error, "Couldn't find product with upc #{upc}"}
+              end
             end)
           end)
         end
@@ -91,6 +95,132 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
 
       assert %{data: %{"_entities" => [%{"upc" => "123", "foo" => "bar"}, %{"foo" => "bar", "upc" => "456"}]}} = resp
+    end
+
+    test "handles errors" do
+      query = """
+        query{
+          _entities(representations:[
+            {
+              __typename: "Product",
+              upc: "1"
+            },
+            {
+              __typename: "Product",
+              upc: "2"
+            }
+            ]){
+              ...on Product{
+                upc
+                foo
+              }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
+
+      assert %{
+               data: nil,
+               errors: [
+                 %{
+                   locations: [%{column: 5, line: 2}],
+                   message: "Couldn't find product with upc 1",
+                   path: ["_entities"]
+                 },
+                 %{
+                   locations: [%{column: 5, line: 2}],
+                   message: "Couldn't find product with upc 2",
+                   path: ["_entities"]
+                 }
+               ]
+             } = resp
+    end
+  end
+
+  describe "resolver with dataloader" do
+    defmodule ResolveTypeSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+
+      def context(ctx) do
+        loader =
+          Dataloader.new(get_policy: :return_nil_on_error)
+          |> Dataloader.add_source(
+            SpecItem.Loader,
+            SpecItem.Loader.data()
+          )
+
+        Map.put(ctx, :loader, loader)
+      end
+
+      def plugins do
+        [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+      end
+
+      query do
+      end
+
+      object :spec_item do
+        key_fields("item_id")
+        field :item_id, :string
+
+        field :_resolve_reference, :spec_item do
+          resolve(fn _root, %{item_id: id} = args, info ->
+            dataloader(SpecItem.Loader).(id, args, info)
+          end)
+        end
+      end
+    end
+
+    test "handles dataloader resolvers" do
+      query = """
+        query{
+          _entities(representations:[
+            {
+              __typename: "SpecItem",
+              item_id: "1"
+            },
+            {
+              __typename: "SpecItem",
+              item_id: "2"
+            }
+            ]){
+              ...on SpecItem{
+                item_id
+              }
+          }
+        }
+      """
+
+      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "1"}, %{"item_id" => "2"}]}}} =
+               Absinthe.run(query, ResolveTypeSchema, variables: %{})
+    end
+
+    test "handles dataloader errors" do
+      query = """
+        query{
+          _entities(representations:[
+            {
+              __typename: "SpecItem",
+              item_id: "1"
+            },
+            {
+              __typename: "SpecItem",
+              item_id: "3"
+            }
+            ]){
+              ...on SpecItem{
+                item_id
+              }
+          }
+        }
+      """
+
+      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "1"}, nil]}}} =
+               Absinthe.run(query, ResolveTypeSchema, variables: %{})
     end
   end
 
