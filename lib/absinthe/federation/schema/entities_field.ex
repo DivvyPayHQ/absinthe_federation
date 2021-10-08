@@ -191,7 +191,12 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       }
     }
 
-  defp reduce_resolution(%{state: :resolved} = res), do: res.value
+  defp reduce_resolution(%{state: :resolved} = res) do
+    case res.value do
+      nil -> {:error, res.errors |> List.first()}
+      _ -> res.value
+    end
+  end
 
   defp reduce_resolution(%{middleware: []} = res), do: res
 
@@ -225,6 +230,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       case res do
         {:ok, data} -> data
         {:error, _} = e -> e
+        nil -> nil
       end
     end)
   end
@@ -232,8 +238,6 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   defp call_middleware({_mod, {fun, args}}, _res) do
     with {:ok, res} <- fun.(args) do
       res
-    else
-      _ -> %{}
     end
   end
 

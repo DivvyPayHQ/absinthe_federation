@@ -52,7 +52,12 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         field :id, :string
 
         field :_resolve_reference, :credit_application do
-          resolve(fn _, args, _ -> {:ok, args} end)
+          resolve(fn _, %{id: id} = args, _ ->
+            case id do
+              "123" -> {:ok, args}
+              _ -> {:error, "ID doesn't exist #{id}"}
+            end
+          end)
         end
       end
 
@@ -97,6 +102,23 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       assert credit_app == %{"id" => "123"}
       assert product == %{"upc" => "321"}
       assert spec_item == %{"itemId" => "456"}
+    end
+
+    test "error handling" do
+      query = """
+        {
+          _entities(representations: [{__typename: "CreditApplication", id: "1"}, {__typename: "Product", upc: "321"}, {__typename: "SpecItem", item_id: "456"}]) {
+            ...on CreditApplication {
+              id
+            }
+          }
+        }
+      """
+
+      assert %{
+               data: nil,
+               errors: [%{locations: [%{column: 5, line: 2}], message: "ID doesn't exist 1", path: ["_entities"]}]
+             } = Absinthe.run!(query, ResolveTypeSchema)
     end
   end
 
