@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Bug Fix: [Fix better error handling when the resolver is a dataloader](https://github.com/DivvyPayHQ/absinthe_federation/pull/27) 
+
 ## 0.1.3
 
 - Feature: [Improved _Entity resolve_type](https://github.com/DivvyPayHQ/absinthe_federation/pull/26) 
