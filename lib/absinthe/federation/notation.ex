@@ -81,6 +81,10 @@ defmodule Absinthe.Federation.Notation do
     end
   end
 
+  defmacro external({:field, meta, []}, do: block) do
+    do_object(meta, identifier, attrs, block)
+  end
+
   @doc """
   Adds the `@requires` directive which is used to annotate the required input fieldset from a base type for a resolver.
   It is used to develop a query plan where the required fields may not be needed by the client,
@@ -192,5 +196,53 @@ defmodule Absinthe.Federation.Notation do
     quote do
       meta :extends, true
     end
+  end
+
+  @doc """
+  Adds the `@extends` directive to the type to indicate that the type as owned by another service.
+
+  ## Example
+
+      object :user do
+        extends()
+        key_fields("id")
+        field :id, non_null(:id)
+      end
+
+
+  ## SDL Output
+
+      type User @key(fields: "id") @extends {
+        id: ID!
+      }
+  """
+  defmacro extend({:object, meta, [identifier, attrs]}, do: block) do
+    do_object(meta, identifier, attrs, block)
+  end
+
+  defmacro extend({:object, meta, [identifier]}, do: block) do
+    do_object(meta, identifier, [], block)
+  end
+
+  defp do_field(meta, identifier, attrs, block) do
+    block = [
+      quote do
+        meta :external, true
+      end,
+      block
+    ]
+    {:field, meta, [identifier, attrs ++ [do: block]]}
+
+  end
+
+  defp do_object(meta, identifier, attrs, block) do
+    block = [
+      quote do
+        meta :extends, true
+      end,
+      block
+    ]
+
+    {:object, meta, [identifier, attrs] ++ [[do: block]]}
   end
 end
