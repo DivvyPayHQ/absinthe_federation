@@ -130,7 +130,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       refute is_nil(sdl)
     end
 
-    test "returns sdl with federated types/fields removed" do
+    test "returns sdl with federated directives included" do
       query = """
       {
         _service {
@@ -144,7 +144,23 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       assert sdl =~ "query: RootQueryType"
       assert sdl =~ "@key(fields: \"id\")"
       assert sdl =~ "@key(fields: \"email\")"
-      refute sdl =~ "_service: _Service"
+    end
+
+    # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
+    # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
+    @tag :skip
+    test "returns sdl with federated types/fields removed" do
+      query = """
+      {
+        _service {
+          sdl
+        }
+      }
+      """
+
+      assert %{data: %{"_service" => %{"sdl" => sdl}}} = Absinthe.run!(query, TestSchema)
+
+      refute sdl =~ "_service: _Service!"
       refute sdl =~ "_resolveReference"
     end
   end

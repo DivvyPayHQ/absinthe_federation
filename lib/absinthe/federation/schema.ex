@@ -39,4 +39,31 @@ defmodule Absinthe.Federation.Schema do
     |> Pipeline.insert_after(TypeImports, __MODULE__.Phase.AddFederatedDirectives)
     |> Pipeline.insert_after(TypeImports, __MODULE__.Phase.AddFederatedTypes)
   end
+
+  @spec remove_federated_types_pipeline(schema :: Absinthe.Schema.t()) :: Absinthe.Pipeline.t()
+  def remove_federated_types_pipeline(schema) do
+    schema
+    |> Absinthe.Pipeline.for_schema(prototype_schema: schema.__absinthe_prototype_schema__())
+    |> Absinthe.Pipeline.upto({Absinthe.Phase.Schema.Validation.Result, pass: :final})
+    |> Absinthe.Schema.apply_modifiers(schema)
+    |> Absinthe.Pipeline.without(__MODULE__.Phase.AddFederatedTypes)
+    |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Schema.ApplyDeclaration,
+      __MODULE__.Phase.RemoveResolveReferenceFields
+    )
+  end
+
+  @spec to_federated_sdl(schema :: Absinthe.Schema.t()) :: String.t()
+  def to_federated_sdl(schema) do
+    # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
+    # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
+    # pipeline = remove_federated_types_pipeline(schema)
+
+    # we can be assertive here, since this same pipeline was already used to
+    # successfully compile the schema.
+    # {:ok, bp, _} = Absinthe.Pipeline.run(schema.__absinthe_blueprint__(), pipeline)
+
+    # Absinthe.Schema.Notation.SDL.Render.inspect(bp, %{pretty: true})
+    Absinthe.Schema.to_sdl(schema)
+  end
 end
