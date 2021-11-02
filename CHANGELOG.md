@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+- Bug Fix: [Fix SDL render that was stripping out extended types](https://github.com/DivvyPayHQ/absinthe_federation/pull/29) 
+
 ## 0.1.4
 
 - Bug Fix: [Fix better error handling when the resolver is a dataloader](https://github.com/DivvyPayHQ/absinthe_federation/pull/27) 
