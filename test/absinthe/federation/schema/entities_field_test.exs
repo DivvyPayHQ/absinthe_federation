@@ -69,12 +69,20 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
           end)
         end
       end
+
+      object :user do
+        extends()
+        key_fields("id")
+
+        field :id, non_null(:id)
+        field :foo, non_null(:string), resolve: fn _, _, _ -> {:ok, "bar"} end
+      end
     end
 
     test "resolves all types fulfilling the _Entity type" do
       query = """
-        query{
-          _entities(representations:[
+        query {
+          _entities(representations: [
             {
               __typename: "Product",
               upc: "123"
@@ -83,11 +91,11 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
               __typename: "Product",
               upc: "456"
             }
-            ]){
-              ...on Product{
-                upc
-                foo
-              }
+          ]) {
+            ...on Product {
+              upc
+              foo
+            }
           }
         }
       """
@@ -99,8 +107,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
     test "handles errors" do
       query = """
-        query{
-          _entities(representations:[
+        query {
+          _entities(representations: [
             {
               __typename: "Product",
               upc: "1"
@@ -109,11 +117,11 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
               __typename: "Product",
               upc: "2"
             }
-            ]){
-              ...on Product{
-                upc
-                foo
-              }
+          ]) {
+            ...on Product {
+              upc
+              foo
+            }
           }
         }
       """
@@ -135,6 +143,32 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
                  }
                ]
              } = resp
+    end
+
+    test "falls back to default _resolve_reference implementation" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "User",
+              id: "123"
+            },
+            {
+              __typename: "User",
+              id: "456"
+            }
+          ]) {
+            ...on User {
+              id
+              foo
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
+
+      assert %{data: %{"_entities" => [%{"id" => "123", "foo" => "bar"}, %{"foo" => "bar", "id" => "456"}]}} = resp
     end
   end
 
@@ -177,8 +211,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
     test "handles dataloader resolvers" do
       query = """
-        query{
-          _entities(representations:[
+        query {
+          _entities(representations: [
             {
               __typename: "SpecItem",
               item_id: "1"
@@ -187,10 +221,10 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
               __typename: "SpecItem",
               item_id: "2"
             }
-            ]){
-              ...on SpecItem{
-                item_id
-              }
+          ]) {
+            ...on SpecItem {
+              item_id
+            }
           }
         }
       """
@@ -201,8 +235,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
     test "handles dataloader errors" do
       query = """
-        query{
-          _entities(representations:[
+        query {
+          _entities(representations: [
             {
               __typename: "SpecItem",
               item_id: "1"
@@ -211,10 +245,10 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
               __typename: "SpecItem",
               item_id: "3"
             }
-            ]){
-              ...on SpecItem{
-                item_id
-              }
+          ]) {
+            ...on SpecItem {
+              item_id
+            }
           }
         }
       """
