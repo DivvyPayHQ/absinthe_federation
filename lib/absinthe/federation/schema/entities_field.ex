@@ -146,7 +146,11 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       {:error,
        "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
 
-  defp resolve_reference(nil, _parent, representation, _resolution), do: {:ok, representation}
+  defp resolve_reference(nil, _parent, representation, _resolution) do
+    args = for {key, val} <- representation, into: %{}, do: {String.to_atom(key), val}
+
+    fn _, _ -> {:ok, args} end
+  end
 
   defp resolve_reference(%{middleware: middleware}, parent, representation, %{schema: schema} = resolution) do
     args = for {key, val} <- representation, into: %{}, do: {String.to_atom(key), val}
@@ -163,7 +167,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
         fn _, _ -> resolve_ref_func.(parent, args, resolution) end
 
       _ ->
-        {:ok, representation}
+        fn _, _ -> {:ok, args} end
     end
   end
 
