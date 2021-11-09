@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6
+
+- Bug Fix: [Fix default _resolve_reference bug](https://github.com/DivvyPayHQ/absinthe_federation/pull/30)
+
 ## 0.1.5
 
 - Bug Fix: [Fix SDL render that was stripping out extended types](https://github.com/DivvyPayHQ/absinthe_federation/pull/29) 
