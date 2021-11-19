@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+- Bug Fix: [Fix absinthe.federation.sdl task stripping out types](https://github.com/DivvyPayHQ/absinthe_federation/pull/31)
+
 ## 0.1.6
 
 - Bug Fix: [Fix default _resolve_reference bug](https://github.com/DivvyPayHQ/absinthe_federation/pull/30)
