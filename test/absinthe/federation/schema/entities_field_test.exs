@@ -258,6 +258,92 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
     end
   end
 
+  describe "resolver with nested fields" do
+    defmodule NestedResolverSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      @products [
+        %{upc: "123", sku: "federation", variation: %{id: "fed"}, __typename: "Product"},
+        %{upc: "456", sku: "federation", variation: %{id: "abs"}, __typename: "Product"}
+      ]
+
+      query do
+        field :test, :string
+      end
+
+      object :product_variation do
+        field :id, non_null(:id)
+      end
+
+      object :product do
+        key_fields(["upc", "sku variation { id }"])
+        field :upc, non_null(:string)
+        field :sku, non_null(:string)
+        field :variation, non_null(:product_variation)
+
+        field :_resolve_reference, :product do
+          resolve(fn
+            _, %{upc: upc}, _ ->
+              {:ok, @products |> Enum.find(&(&1.upc == upc))}
+
+            _, %{sku: sku, variation: %{id: variation_id}}, _ ->
+              {:ok, @products |> Enum.find(&(&1.variation.id == variation_id && &1.sku == sku))}
+          end)
+        end
+      end
+    end
+
+    test "resolves all types by single key" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "Product",
+              upc: "123"
+            }
+          ]) {
+            ...on Product {
+              upc
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, NestedResolverSchema, variables: %{})
+
+      assert resp == %{data: %{"_entities" => [%{"upc" => "123"}]}}
+    end
+
+    test "resolves all types by nested keys" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "Product",
+              sku: "federation",
+              variation: {id: "abs"}
+            }
+          ]) {
+            ...on Product {
+              upc
+              sku
+              variation {
+                id
+              }
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, NestedResolverSchema, variables: %{})
+
+      assert resp == %{
+               data: %{"_entities" => [%{"upc" => "456", "sku" => "federation", "variation" => %{"id" => "abs"}}]}
+             }
+    end
+  end
+
   describe "sdl" do
     defmodule SDLSchema do
       use Absinthe.Schema
