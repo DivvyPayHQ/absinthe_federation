@@ -147,7 +147,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
        "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
 
   defp resolve_reference(nil, _parent, representation, _resolution) do
-    args = convert_key_to_atom(representation)
+    args = convert_keys_to_atom(representation)
 
     fn _, _ -> {:ok, args} end
   end
@@ -158,7 +158,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
          representation,
          %{schema: schema} = resolution
        ) do
-    args = convert_key_to_atom(representation)
+    args = convert_keys_to_atom(representation)
 
     middleware
     |> Absinthe.Middleware.unshim(schema)
@@ -176,22 +176,18 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     end
   end
 
-  defp convert_key_to_atom(map) when is_map(map) do
+  defp convert_keys_to_atom(map) when is_map(map) do
     map
     |> Enum.reduce(%{}, fn {k, v}, acc ->
-      k = k |> convert_key()
-      v = v |> convert_key_to_atom()
+      k = convert_key(k)
+      v = convert_keys_to_atom(v)
       acc |> Map.put(k, v)
     end)
   end
 
-  defp convert_key_to_atom(v) do
-    v
-  end
+  defp convert_keys_to_atom(v), do: v
 
-  defp convert_key(k) do
-    String.to_atom(k)
-  end
+  defp convert_key(k), do: String.to_atom(k)
 
   defp only_resolver_middleware({{Absinthe.Resolution, :call}, _}), do: true
 
