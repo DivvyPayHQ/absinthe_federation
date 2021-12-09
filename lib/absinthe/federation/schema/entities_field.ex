@@ -97,7 +97,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       end)
       |> Enum.flat_map(fn resolvers ->
         case resolvers do
-          {{:dataloader, _}, v} -> [List.first(v)]
+          {{:dataloader, _}, v} -> Enum.take(v, 1)
           {{:resolver, _}, v} -> v
         end
       end)
