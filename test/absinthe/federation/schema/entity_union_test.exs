@@ -83,7 +83,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
     test "correct object type returned" do
       query = """
         {
-          _entities(representations: [{__typename: "CreditApplication", id: "123"}, {__typename: "Product", upc: "321"}, {__typename: "SpecItem", item_id: "456"}]) {
+          _entities(representations: [{__typename: "CreditApplication", id: "123"}, {__typename: "Product", upc: "321"}, {__typename: "SpecItem", item_id: "456"}, {__typename: "SpecItem", item_id: "456"}]) {
             ...on CreditApplication {
               id
             }
@@ -97,11 +97,13 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         }
       """
 
-      %{data: %{"_entities" => [credit_app, product, spec_item]}} = Absinthe.run!(query, ResolveTypeSchema)
+      %{data: %{"_entities" => [spec_item, spec_item_two, credit_app, product]}} =
+        Absinthe.run!(query, ResolveTypeSchema)
 
       assert credit_app == %{"id" => "123"}
       assert product == %{"upc" => "321"}
       assert spec_item == %{"itemId" => "456"}
+      assert spec_item_two == %{"itemId" => "456"}
     end
 
     test "error handling" do
