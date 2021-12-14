@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9
+
+- Bug Fix: [Fix nested _FieldSet atom conversion](https://github.com/DivvyPayHQ/absinthe_federation/pull/34)
+
 ## 0.1.8
 
 - Bug Fix: [Fix duplicate resolvers](https://github.com/DivvyPayHQ/absinthe_federation/pull/35)
