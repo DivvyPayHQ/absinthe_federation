@@ -84,17 +84,26 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   def call(%{state: :unresolved} = resolution, _args) do
     resolutions = resolver(resolution.source, resolution.arguments, resolution)
 
-    value =
-      Enum.uniq_by(resolutions, fn %{middleware: [middleware | _remaining_middleware]} = r ->
+    resolvers =
+      Enum.group_by(resolutions, fn %{middleware: [middleware | _remaining_middleware]} = r ->
         case middleware do
           {Absinthe.Middleware.Dataloader, {loader, _fun}} ->
             {source, _} = find_relevant_dataloader(loader)
-            source
+            {:dataloader, source}
 
           _ ->
-            r
+            {:resolver, r}
         end
       end)
+      |> Enum.flat_map(fn resolvers ->
+        case resolvers do
+          {{:dataloader, _}, v} -> Enum.take(v, 1)
+          {{:resolver, _}, v} -> v
+        end
+      end)
+
+    value =
+      resolvers
       |> Enum.map(&reduce_resolution/1)
       |> List.flatten()
 
