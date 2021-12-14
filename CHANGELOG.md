@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8
+
+- Bug Fix: [Fix duplicate resolvers](https://github.com/DivvyPayHQ/absinthe_federation/pull/35)
+
 ## 0.1.7
 
 - Bug Fix: [Fix absinthe.federation.sdl task stripping out types](https://github.com/DivvyPayHQ/absinthe_federation/pull/31)
