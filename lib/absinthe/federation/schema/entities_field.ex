@@ -181,7 +181,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     |> Enum.reduce(%{}, fn {k, v}, acc ->
       k = convert_key(k)
       v = convert_keys_to_atom(v)
-      acc |> Map.put(k, v)
+      Map.put(acc, k, v)
     end)
   end
 
