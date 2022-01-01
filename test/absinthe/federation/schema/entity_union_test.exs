@@ -71,7 +71,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       end
 
       object :spec_item do
-        key_fields("id")
+        key_fields("item_id")
         field :item_id, :string
 
         field :_resolve_reference, :spec_item do
