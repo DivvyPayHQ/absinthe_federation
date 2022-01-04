@@ -20,11 +20,12 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
   end
 
   defp validate_object(%Blueprint.Schema.ObjectTypeDefinition{} = object) do
-    case get_in(object.__private__, [:meta, :key_fields]) do
-      nil ->
+    case is_defining_entity?(object) do
+      false ->
         object
 
-      key_fields ->
+      true ->
+        key_fields = get_in(object.__private__, [:meta, :key_fields])
         validate_key_fields(key_fields, object)
     end
   end
@@ -69,6 +70,11 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
     field = Enum.find(object.fields, fn x -> x.name == selection.name end)
     object = Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
     validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
+  end
+
+  defp is_defining_entity?(object) do
+    not is_nil(get_in(object.__private__, [:meta, :key_fields])) and
+      is_nil(get_in(object.__private__, [:meta, :extends]))
   end
 
   defp in?(key, fields) do
