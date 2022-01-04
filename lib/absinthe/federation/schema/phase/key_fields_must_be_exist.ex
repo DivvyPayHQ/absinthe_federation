@@ -48,8 +48,12 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
 
       [_ | _] ->
         nested_key_selections = key_fields |> parse_nested_key()
-        Enum.reduce(nested_key_selections, object, fn x, acc -> validate_nested_key(x, acc, object, key_fields) end)
+        validate_nested_key(nested_key_selections, object, object, key_fields)
     end
+  end
+
+  defp validate_nested_key(selections, ancestor, object, key_fields) when is_list(selections) do
+    Enum.reduce(selections, ancestor, fn x, acc -> validate_nested_key(x, acc, object, key_fields) end)
   end
 
   defp validate_nested_key(%{selection_set: nil, name: key}, ancestor, object, key_fields) do
@@ -64,10 +68,7 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
     bp = ancestor.module.__absinthe_blueprint__()
     field = Enum.find(object.fields, fn x -> x.name == selection.name end)
     object = Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
-
-    Enum.reduce(selection.selection_set.selections, ancestor, fn x, acc ->
-      validate_nested_key(x, acc, object, key_fields)
-    end)
+    validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
   end
 
   defp in?(key, fields) do
