@@ -50,10 +50,18 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
 
       object :product_variation do
         field :uuid, non_null(:id)
+        field :change, non_null(:variation_change)
+      end
+
+      object :variation_change do
+        field :name, :string
       end
 
       object :nested_product do
-        key_fields("uuid variation { id }")
+        # level 1: `:uuid`
+        # level 2: `:id`
+        # level 3: `:change_name`
+        key_fields("uuid variation { id change { change_name } }")
         field :upc, non_null(:string)
         field :sku, non_null(:string)
         field :variation, non_null(:product_variation)
@@ -62,10 +70,9 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
   """
 
   test "it should throw an error when flat key fields not exist" do
-    error =
-      ~r/The @key \"name\" is not exist in :product object.(\w|\W|\s)+The @key \"uuid\" is not exist in :product object./
-
-    assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@flat_key_schema) end)
+    assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
+    assert %{message: "The @key \"uuid\" is not exist in :product object.\n"} = error1
+    assert %{message: "The @key \"name\" is not exist in :product object.\n"} = error2
   end
 
   test "it should throw an error when nested key fields not exist in object" do
@@ -73,9 +80,18 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
     assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@nested_key_schema) end)
   end
 
-  @tag :impl
   test "it should throw an error when nested key fields not exist in schema" do
-    error = ~r/The field \"uuid\" of @key \"uuid variation { id }\" is not exist./
-    assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@nested_ref_key_schema) end)
+    assert %{phase_errors: [error3, error2, error1]} = catch_error(Code.eval_string(@nested_ref_key_schema))
+
+    assert %{message: "The field \"uuid\" of @key \"uuid variation { id change { change_name } }\" is not exist.\n"} =
+             error1
+
+    assert %{message: "The field \"id\" of @key \"uuid variation { id change { change_name } }\" is not exist.\n"} =
+             error2
+
+    assert %{
+             message:
+               "The field \"change_name\" of @key \"uuid variation { id change { change_name } }\" is not exist.\n"
+           } = error3
   end
 end

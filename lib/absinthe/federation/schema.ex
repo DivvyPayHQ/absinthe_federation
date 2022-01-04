@@ -38,7 +38,7 @@ defmodule Absinthe.Federation.Schema do
     Pipeline.insert_after(pipeline, TypeImports, [
       __MODULE__.Phase.AddFederatedTypes,
       __MODULE__.Phase.AddFederatedDirectives,
-      __MODULE__.Phase.KeyFieldsMustBeValid
+      __MODULE__.Phase.KeyFieldsMustBeExist
     ])
   end
 
