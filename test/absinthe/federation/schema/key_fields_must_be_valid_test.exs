@@ -73,7 +73,6 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
     assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@nested_key_schema) end)
   end
 
-  @tag :impl
   test "it should throw an error when nested key fields not exist in schema" do
     error = ~r/The field \"uuid\" of @key \"uuid variation { id }\" is not exist./
     assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@nested_ref_key_schema) end)
