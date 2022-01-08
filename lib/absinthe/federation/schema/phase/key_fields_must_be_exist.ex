@@ -1,4 +1,4 @@
-defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeValid do
+defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
   use Absinthe.Phase
   alias Absinthe.Blueprint
 
@@ -20,11 +20,12 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeValid do
   end
 
   defp validate_object(%Blueprint.Schema.ObjectTypeDefinition{} = object) do
-    case get_in(object.__private__, [:meta, :key_fields]) do
-      nil ->
+    case is_defining_entity?(object) do
+      false ->
         object
 
-      key_fields ->
+      true ->
+        key_fields = get_in(object.__private__, [:meta, :key_fields])
         validate_key_fields(key_fields, object)
     end
   end
@@ -48,23 +49,32 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeValid do
 
       [_ | _] ->
         nested_key_selections = key_fields |> parse_nested_key()
-        Enum.reduce(nested_key_selections, object, fn x, acc -> validate_nested_key(x, acc, key_fields) end)
+        validate_nested_key(nested_key_selections, object, object, key_fields)
     end
   end
 
-  defp validate_nested_key(%{selection_set: nil, name: key}, object, key_fields) do
-    # when key in current schema
+  defp validate_nested_key(selections, ancestor, object, key_fields) when is_list(selections) do
+    Enum.reduce(selections, ancestor, fn x, acc -> validate_nested_key(x, acc, object, key_fields) end)
+  end
+
+  defp validate_nested_key(%{selection_set: nil, name: key}, ancestor, object, key_fields) do
     if key |> in?(object.fields) do
-      object
+      ancestor
     else
-      Absinthe.Phase.put_error(object, error(key, object, key_fields))
+      Absinthe.Phase.put_error(ancestor, error(key, ancestor, key_fields))
     end
   end
 
-  defp validate_nested_key(selection, object, _key_fields) do
-    bp = object.module.__absinthe_blueprint__()
-    Absinthe.Blueprint.Schema.lookup_type(bp, String.to_atom(selection.name))
-    object
+  defp validate_nested_key(selection, ancestor, object, key_fields) do
+    bp = ancestor.module.__absinthe_blueprint__()
+    field = Enum.find(object.fields, fn x -> x.name == selection.name end)
+    object = Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
+    validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
+  end
+
+  defp is_defining_entity?(object) do
+    not is_nil(get_in(object.__private__, [:meta, :key_fields])) and
+      is_nil(get_in(object.__private__, [:meta, :extends]))
   end
 
   defp in?(key, fields) do
