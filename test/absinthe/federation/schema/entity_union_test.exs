@@ -97,7 +97,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         }
       """
 
-      %{data: %{"_entities" => [spec_item, spec_item_two, credit_app, product]}} =
+      %{data: %{"_entities" => [credit_app, product, spec_item, spec_item_two]}} =
         Absinthe.run!(query, ResolveTypeSchema)
 
       assert credit_app == %{"id" => "123"}
