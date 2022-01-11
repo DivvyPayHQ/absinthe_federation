@@ -116,7 +116,7 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
 
   def explanation(field, _object, key_fields) do
     """
-    The field #{inspect(field)} of @key #{inspect(key_fields)} is not exist.
+    The field #{inspect(field)} of @key #{inspect(key_fields)} does not exist.
     """
   end
 end
