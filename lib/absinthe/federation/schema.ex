@@ -35,9 +35,11 @@ defmodule Absinthe.Federation.Schema do
   Injects custom compile-time `Absinthe.Phase`
   """
   def pipeline(pipeline) do
-    pipeline
-    |> Pipeline.insert_after(TypeImports, __MODULE__.Phase.AddFederatedDirectives)
-    |> Pipeline.insert_after(TypeImports, __MODULE__.Phase.AddFederatedTypes)
+    Pipeline.insert_after(pipeline, TypeImports, [
+      __MODULE__.Phase.AddFederatedTypes,
+      __MODULE__.Phase.AddFederatedDirectives,
+      __MODULE__.Phase.KeyFieldsMustBeExist
+    ])
   end
 
   @spec remove_federated_types_pipeline(schema :: Absinthe.Schema.t()) :: Absinthe.Pipeline.t()
