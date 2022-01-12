@@ -39,15 +39,15 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
   end
 
   defp validate_key_fields(key_fields, object) when is_binary(key_fields) do
-    case String.split(key_fields) do
-      [key_fields] ->
+    case is_nested?(key_fields) do
+      false ->
         if key_fields |> in?(object.fields) do
           object
         else
           Absinthe.Phase.put_error(object, error(key_fields, object))
         end
 
-      [_ | _] ->
+      true ->
         nested_key_selections = key_fields |> parse_nested_key()
         validate_nested_key(nested_key_selections, object, object, key_fields)
     end
@@ -77,9 +77,12 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
       is_nil(get_in(object.__private__, [:meta, :extends]))
   end
 
+  defp is_nested?(key_fields) do
+    String.contains?(key_fields, "{") and String.contains?(key_fields, "}")
+  end
+
   defp in?(key, fields) do
-    names = fields |> Enum.map(& &1.name)
-    key in names
+    Enum.any?(fields, &(key == &1.name))
   end
 
   defp error(key, object) do
