@@ -85,7 +85,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     resolutions = resolver(resolution.source, resolution.arguments, resolution)
 
     resolvers =
-      Enum.group_by(resolutions, fn %{middleware: [middleware | _remaining_middleware]} = r ->
+      resolutions
+      |> Enum.group_by(fn %{middleware: [middleware | _remaining_middleware]} = r ->
         case middleware do
           {Absinthe.Middleware.Dataloader, {loader, _fun}} ->
             {source, _} = find_relevant_dataloader(loader)
@@ -106,13 +107,14 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       resolvers
       |> Enum.map(&reduce_resolution/1)
       |> List.flatten()
+      |> Map.new()
 
     res =
-      value
+      resolution.arguments.representations
       |> Enum.reduce(%{errors: [], value: []}, fn r, acc ->
-        case r do
+        case Map.get(value, r) do
           {:error, err} -> Map.update(acc, :errors, [], fn v -> v ++ [err] end)
-          value -> Map.update(acc, :value, [], fn v -> v ++ [value] end)
+          result -> Map.update(acc, :value, [], fn v -> v ++ [result] end)
         end
       end)
 
@@ -137,6 +139,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       schema
       |> Absinthe.Schema.lookup_type(typename)
       |> resolve_representation(parent, representation, resolution)
+
+    resolution = Map.put(resolution, :arguments, Map.put(resolution.arguments, :representation, representation))
 
     Absinthe.Resolution.call(resolution, fun)
   end
@@ -224,8 +228,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
 
   defp reduce_resolution(%{state: :resolved} = res) do
     case res.value do
-      nil -> {:error, res.errors |> List.first()}
-      _ -> res.value
+      nil -> {res.arguments.representation, {:error, res.errors |> List.first()}}
+      _ -> {res.arguments.representation, res.value}
     end
   end
 
@@ -246,29 +250,35 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       |> Absinthe.Type.meta()
       |> Map.get(:key_fields, "id")
 
-    ids =
+    representations =
       args
       |> Enum.reject(fn arg ->
         Map.get(arg, "__typename") != typename
       end)
+
+    ids =
+      representations
       |> Enum.map(fn arg -> Map.get(arg, key_field) end)
 
     loader
     |> Dataloader.load_many(source, %{__typename: typename}, ids)
     |> Dataloader.run()
     |> Dataloader.get_many(source, %{__typename: typename}, ids)
-    |> Enum.map(fn res ->
+    |> Enum.zip(representations)
+    |> Enum.map(fn {res, arg} ->
       case res do
-        {:ok, data} -> data
-        {:error, _} = e -> e
-        nil -> nil
+        {:ok, data} -> {arg, data}
+        {:error, _} = e -> {arg, e}
+        nil -> {arg, nil}
       end
     end)
   end
 
-  defp call_middleware({_mod, {fun, args}}, _res) do
+  defp call_middleware({_mod, {fun, args}}, resolution) do
     with {:ok, res} <- fun.(args) do
-      res
+      {resolution.arguments.representation, res}
+    else
+      err -> {resolution.arguments.representation, err}
     end
   end
 
