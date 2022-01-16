@@ -20,7 +20,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
   end
 
   defp validate_object(%Blueprint.Schema.ObjectTypeDefinition{} = object) do
-    case is_defining_entity?(object) do
+    case is_defining_or_extending?(object) do
       false ->
         object
 
@@ -72,9 +72,8 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
     validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
   end
 
-  defp is_defining_entity?(object) do
-    not is_nil(get_in(object.__private__, [:meta, :key_fields])) and
-      is_nil(get_in(object.__private__, [:meta, :extends]))
+  defp is_defining_or_extending?(object) do
+    not is_nil(get_in(object.__private__, [:meta, :key_fields]))
   end
 
   defp is_nested?(key_fields) do
