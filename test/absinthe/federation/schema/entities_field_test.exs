@@ -74,7 +74,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
         extends()
         key_fields("id")
 
-        field :id, non_null(:id)
+        field :id, non_null(:id), do: external()
         field :foo, non_null(:string), resolve: fn _, _, _ -> {:ok, "bar"} end
       end
     end

@@ -1,8 +1,8 @@
-defmodule Absinthe.Federation.Schema.Schema.KeyFieldsMustBeValidWhenExtends do
+defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidWhenExtendsTest do
   use ExUnit.Case, async: true
 
   @valid_schema """
-    defmodule ValidSchema do
+    defmodule ValidSchemaWhenExtends do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -20,7 +20,7 @@ defmodule Absinthe.Federation.Schema.Schema.KeyFieldsMustBeValidWhenExtends do
   """
 
   @flat_key_schema """
-    defmodule FlatKeySchema do
+    defmodule FlatKeySchemaWhenExtends do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -49,7 +49,7 @@ defmodule Absinthe.Federation.Schema.Schema.KeyFieldsMustBeValidWhenExtends do
 
   test "it should throw an error when flat key fields not exist" do
     assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
-    assert %{message: "The @key \"sku\" does not mark as external in :product object.\n"} = error1
-    assert %{message: "The @key \"upc\" does not mark as external in :product object.\n"} = error2
+    assert %{message: "The field \"sku\" does not mark as @external in :product object.\n"} = error1
+    assert %{message: "The field \"upc\" does not mark as @external in :product object.\n"} = error2
   end
 end

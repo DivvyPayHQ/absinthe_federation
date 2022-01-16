@@ -41,7 +41,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
   defp validate_key_fields(key_fields, object) when is_binary(key_fields) do
     case is_nested?(key_fields) do
       false ->
-        if key_fields |> in?(object.fields) do
+        if key_fields |> is_marked_as_external?(object.fields) do
           object
         else
           Absinthe.Phase.put_error(object, error(key_fields, object))
@@ -58,7 +58,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
   end
 
   defp validate_nested_key(%{selection_set: nil, name: key}, ancestor, object, key_fields) do
-    if key |> in?(object.fields) do
+    if key |> is_marked_as_external?(object.fields) do
       ancestor
     else
       Absinthe.Phase.put_error(ancestor, error(key, ancestor, key_fields))
@@ -81,8 +81,13 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
     String.contains?(key_fields, "{") and String.contains?(key_fields, "}")
   end
 
-  defp in?(key, fields) do
-    Enum.any?(fields, &(key == &1.name))
+  defp is_marked_as_external?(key, fields) do
+    field = Enum.find(fields, &(key == &1.name))
+    field.directives != [] && has_external?(field)
+  end
+
+  defp has_external?(field) do
+    Enum.find(field.directives, fn x -> x.name == "external" end)
   end
 
   defp error(key, object) do
@@ -113,13 +118,13 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
 
   def explanation(key, object) do
     """
-    The @key #{inspect(key)} does not exist in #{inspect(object.identifier)} object.
+    The field #{inspect(key)} does not mark as @external in #{inspect(object.identifier)} object.
     """
   end
 
   def explanation(field, _object, key_fields) do
     """
-    The field #{inspect(field)} of @key #{inspect(key_fields)} does not exist.
+    The field #{inspect(field)} of @key #{inspect(key_fields)} does not mark as @external.
     """
   end
 end
