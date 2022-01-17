@@ -1,6 +1,7 @@
 defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
   use Absinthe.Phase
   alias Absinthe.Blueprint
+  import Absinthe.Federation.Schema.Phase.Validation.Util
 
   @doc """
   Run validate
@@ -39,7 +40,10 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
   end
 
   defp validate_key_fields(key_fields, object) when is_binary(key_fields) do
-    case is_nested?(key_fields) do
+    with true <- is_nested?(key_fields),
+         {:ok, nested_key_selections} <- parse_key_fields(key_fields) do
+      validate_nested_key(nested_key_selections, object, object, key_fields)
+    else
       false ->
         if key_fields |> in?(object.fields) do
           object
@@ -47,9 +51,8 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
           Absinthe.Phase.put_error(object, error(key_fields, object))
         end
 
-      true ->
-        nested_key_selections = key_fields |> parse_nested_key()
-        validate_nested_key(nested_key_selections, object, object, key_fields)
+      _ ->
+        Absinthe.Phase.put_error(object, syntax_error(key_fields, object))
     end
   end
 
@@ -100,14 +103,6 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
       phase: __MODULE__,
       extra: %{key: key}
     }
-  end
-
-  defp parse_nested_key(nested_key) do
-    with {:ok, tokens} <- Absinthe.Lexer.tokenize("{ " <> nested_key <> " }"),
-         {:ok, parsed} <- :absinthe_parser.parse(tokens) do
-      access = [Access.key(:definitions), Access.at(0), Access.key(:selection_set), Access.key(:selections)]
-      get_in(parsed, access)
-    end
   end
 
   def explanation(key, object) do
