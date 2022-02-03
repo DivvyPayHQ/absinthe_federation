@@ -113,7 +113,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
 
   def explanation(field, _object, key_fields) do
     """
-    The field #{inspect(field)} of @key #{inspect(key_fields)} does not mark as @external.
+    The field #{inspect(field)} of @key #{inspect(key_fields)} is not marked @external.
     """
   end
 end
