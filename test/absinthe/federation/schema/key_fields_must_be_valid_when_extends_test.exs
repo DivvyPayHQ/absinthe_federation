@@ -71,14 +71,14 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidWhenExtendsTest do
     assert {_, _} = Code.eval_string(@valid_schema)
   end
 
-  test "it should throw an error when flat key fields does not mark as @external" do
+  test "it should throw an error when flat key fields is not marked @external" do
     assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
-    assert %{message: "The field \"sku\" does not mark as @external in :product object.\n"} = error1
-    assert %{message: "The field \"upc\" does not mark as @external in :product object.\n"} = error2
+    assert %{message: "The field \"sku\" is not marked @external in :product object.\n"} = error1
+    assert %{message: "The field \"upc\" is not marked @external in :product object.\n"} = error2
   end
 
-  test "it should throw an error when nested key field does not mark as @external" do
-    error = ~r/The field \"id\" of @key \"color { id }\" does not mark as @external./
+  test "it should throw an error when nested key field is not marked @external" do
+    error = ~r/The field \"id\" of @key \"color { id }\" is not marked @external./
     assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@nested_key_schema) end)
   end
 end

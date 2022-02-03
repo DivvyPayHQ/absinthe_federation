@@ -13,7 +13,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.Util do
 
   def syntax_error(key, object) do
     %Absinthe.Phase.Error{
-      message: "The @key #{inspect(key)} has syntax error.",
+      message: "The @key #{inspect(key)} has a syntax error.",
       locations: [object.__reference__.location],
       phase: __MODULE__,
       extra: %{key: key}
