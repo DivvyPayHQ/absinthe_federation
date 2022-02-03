@@ -159,7 +159,7 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
   end
 
   test "it should throw an error when syntax error" do
-    error = ~r/The @key \"id { \(variation id\) } \" has syntax error./
+    error = ~r/The @key \"id { \(variation id\) } \" has a syntax error./
     assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@invalid_syntax_schema) end)
   end
 
