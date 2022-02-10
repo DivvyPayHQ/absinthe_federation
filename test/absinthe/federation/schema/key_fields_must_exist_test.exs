@@ -1,4 +1,4 @@
-defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
+defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   use Absinthe.Federation.Case, async: true
 
   @flat_key_schema """
@@ -69,6 +69,69 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
     end
   """
 
+  @invalid_syntax_schema """
+  defmodule InvalidSyntaxSchema do
+    use Absinthe.Schema
+    use Absinthe.Federation.Schema
+
+    query do
+      extends()
+    end
+
+    object :product do
+      key_fields("id { (variation id) } ")
+      field :id, non_null(:id)
+      field :variation, non_null(:product_variation)
+    end
+
+    object :product_variation do
+      field :id, non_null(:id)
+    end
+  end
+  """
+
+  @object_not_exist_schema1 """
+  defmodule ObjectNotExistSchema1 do
+    use Absinthe.Schema
+    use Absinthe.Federation.Schema
+
+    query do
+      extends()
+    end
+
+    object :product do
+      key_fields("id variation { id }")
+      field :id, non_null(:id)
+      field :product_variation, non_null(:product_variation)
+    end
+
+    object :product_variation do
+      field :id, non_null(:id)
+    end
+  end
+  """
+
+  @object_not_exist_schema2 """
+  defmodule ObjectNotExistSchema2 do
+    use Absinthe.Schema
+    use Absinthe.Federation.Schema
+
+    query do
+      extends()
+    end
+
+    object :product do
+      key_fields("id variation { id }")
+      field :id, non_null(:id)
+      field :variation, non_null(:string)
+    end
+
+    object :product_variation do
+      field :id, non_null(:id)
+    end
+  end
+  """
+
   test "it should throw an error when flat key fields not exist" do
     assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
     assert %{message: "The @key \"uuid\" does not exist in :product object.\n"} = error1
@@ -93,5 +156,20 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
              message:
                "The field \"change_name\" of @key \"uuid variation { id change { change_name } }\" does not exist.\n"
            } = error3
+  end
+
+  test "it should throw an error when syntax error" do
+    error = ~r/The @key \"id { \(variation id\) } \" has a syntax error./
+    assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@invalid_syntax_schema) end)
+  end
+
+  test "it should throw an error when object does not exist" do
+    error = ~r/The object \"variation\" of @key \"id variation { id }\" does not exist./
+    assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@object_not_exist_schema1) end)
+  end
+
+  test "it should throw an error when object ref isn't an object" do
+    error = ~r/The object \"variation\" of @key \"id variation { id }\" does not exist./
+    assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@object_not_exist_schema2) end)
   end
 end

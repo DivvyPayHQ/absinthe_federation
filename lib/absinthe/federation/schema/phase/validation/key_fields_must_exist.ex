@@ -1,6 +1,7 @@
-defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
+defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
   use Absinthe.Phase
   alias Absinthe.Blueprint
+  import Absinthe.Federation.Schema.Phase.Validation.Util
 
   @doc """
   Run validate
@@ -20,7 +21,7 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
   end
 
   defp validate_object(%Blueprint.Schema.ObjectTypeDefinition{} = object) do
-    case is_defining_entity?(object) do
+    case is_defining_or_extending?(object) do
       false ->
         object
 
@@ -39,7 +40,10 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
   end
 
   defp validate_key_fields(key_fields, object) when is_binary(key_fields) do
-    case is_nested?(key_fields) do
+    with true <- is_nested?(key_fields),
+         {:ok, nested_key_selections} <- parse_key_fields(key_fields) do
+      validate_nested_key(nested_key_selections, object, object, key_fields)
+    else
       false ->
         if key_fields |> in?(object.fields) do
           object
@@ -47,9 +51,8 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
           Absinthe.Phase.put_error(object, error(key_fields, object))
         end
 
-      true ->
-        nested_key_selections = key_fields |> parse_nested_key()
-        validate_nested_key(nested_key_selections, object, object, key_fields)
+      _ ->
+        Absinthe.Phase.put_error(object, syntax_error(key_fields, object))
     end
   end
 
@@ -68,17 +71,17 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
   defp validate_nested_key(selection, ancestor, object, key_fields) do
     bp = ancestor.module.__absinthe_blueprint__()
     field = Enum.find(object.fields, fn x -> x.name == selection.name end)
-    object = Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
-    validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
+    object = field && Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
+
+    if object do
+      validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
+    else
+      Absinthe.Phase.put_error(ancestor, no_object_error(key_fields, ancestor, selection.name))
+    end
   end
 
-  defp is_defining_entity?(object) do
-    not is_nil(get_in(object.__private__, [:meta, :key_fields])) and
-      is_nil(get_in(object.__private__, [:meta, :extends]))
-  end
-
-  defp is_nested?(key_fields) do
-    String.contains?(key_fields, "{") and String.contains?(key_fields, "}")
+  defp is_defining_or_extending?(object) do
+    not is_nil(get_in(object.__private__, [:meta, :key_fields]))
   end
 
   defp in?(key, fields) do
@@ -101,14 +104,6 @@ defmodule Absinthe.Federation.Schema.Phase.KeyFieldsMustBeExist do
       phase: __MODULE__,
       extra: %{key: key}
     }
-  end
-
-  defp parse_nested_key(nested_key) do
-    with {:ok, tokens} <- Absinthe.Lexer.tokenize("{ " <> nested_key <> " }"),
-         {:ok, parsed} <- :absinthe_parser.parse(tokens) do
-      access = [Access.key(:definitions), Access.at(0), Access.key(:selection_set), Access.key(:selections)]
-      get_in(parsed, access)
-    end
   end
 
   def explanation(key, object) do
