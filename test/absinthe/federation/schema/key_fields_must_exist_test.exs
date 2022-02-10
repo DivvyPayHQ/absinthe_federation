@@ -91,7 +91,7 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   """
 
   @object_not_exist_schema1 """
-  defmodule ObjectNotexistchema1 do
+  defmodule ObjectNotExistSchema1 do
     use Absinthe.Schema
     use Absinthe.Federation.Schema
 
@@ -112,7 +112,7 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   """
 
   @object_not_exist_schema2 """
-  defmodule ObjectNotexistchema2 do
+  defmodule ObjectNotExistSchema2 do
     use Absinthe.Schema
     use Absinthe.Federation.Schema
 
