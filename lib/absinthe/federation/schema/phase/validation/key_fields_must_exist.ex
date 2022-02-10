@@ -1,4 +1,4 @@
-defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeExist do
+defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
   use Absinthe.Phase
   alias Absinthe.Blueprint
   import Absinthe.Federation.Schema.Phase.Validation.Util

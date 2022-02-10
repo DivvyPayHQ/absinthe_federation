@@ -1,4 +1,4 @@
-defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidTest do
+defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   use Absinthe.Federation.Case, async: true
 
   @flat_key_schema """
