@@ -1,6 +1,7 @@
 defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenExtends do
   use Absinthe.Phase
   alias Absinthe.Blueprint
+  import Absinthe.Federation.Schema.Phase.Validation.Util
 
   @doc """
   Run validate
@@ -48,7 +49,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
         end
 
       true ->
-        nested_key_selections = key_fields |> parse_nested_key()
+        {:ok, nested_key_selections} = parse_key_fields(key_fields)
         validate_nested_key(nested_key_selections, object, object, key_fields)
     end
   end
@@ -75,10 +76,6 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
   defp is_extending?(object) do
     not is_nil(get_in(object.__private__, [:meta, :key_fields])) and
       not is_nil(get_in(object.__private__, [:meta, :extends]))
-  end
-
-  defp is_nested?(key_fields) do
-    String.contains?(key_fields, "{") and String.contains?(key_fields, "}")
   end
 
   defp is_marked_as_external?(key, fields) do
@@ -108,23 +105,15 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustBeValidWhenEx
     }
   end
 
-  defp parse_nested_key(nested_key) do
-    with {:ok, tokens} <- Absinthe.Lexer.tokenize("{ " <> nested_key <> " }"),
-         {:ok, parsed} <- :absinthe_parser.parse(tokens) do
-      access = [Access.key(:definitions), Access.at(0), Access.key(:selection_set), Access.key(:selections)]
-      get_in(parsed, access)
-    end
-  end
-
   def explanation(key, object) do
     """
-    The field #{inspect(key)} does not mark as @external in #{inspect(object.identifier)} object.
+    The field #{inspect(key)} is not marked @external in #{inspect(object.identifier)} object.
     """
   end
 
   def explanation(field, _object, key_fields) do
     """
-    The field #{inspect(field)} of @key #{inspect(key_fields)} does not mark as @external.
+    The field #{inspect(field)} of @key #{inspect(key_fields)} is not marked @external.
     """
   end
 end

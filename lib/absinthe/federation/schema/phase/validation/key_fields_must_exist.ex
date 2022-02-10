@@ -71,16 +71,17 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
   defp validate_nested_key(selection, ancestor, object, key_fields) do
     bp = ancestor.module.__absinthe_blueprint__()
     field = Enum.find(object.fields, fn x -> x.name == selection.name end)
-    object = Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
-    validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
+    object = field && Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
+
+    if object do
+      validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields)
+    else
+      Absinthe.Phase.put_error(ancestor, no_object_error(key_fields, ancestor, selection.name))
+    end
   end
 
   defp is_defining_or_extending?(object) do
     not is_nil(get_in(object.__private__, [:meta, :key_fields]))
-  end
-
-  defp is_nested?(key_fields) do
-    String.contains?(key_fields, "{") and String.contains?(key_fields, "}")
   end
 
   defp in?(key, fields) do
