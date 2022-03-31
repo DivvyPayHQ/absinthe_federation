@@ -63,7 +63,7 @@ defmodule Absinthe.Federation.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6.5"},
+      {:absinthe, "~> 1.7.0"},
       {:dataloader, "~> 1.0.9"},
 
       # Dev
