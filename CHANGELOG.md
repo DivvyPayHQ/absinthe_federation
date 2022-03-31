@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0
+
+- Bug Fix: [Remove federated types when rendering SDL](https://github.com/DivvyPayHQ/absinthe_federation/pull/42)
+- Feature: [Support key fields validation when extending](https://github.com/DivvyPayHQ/absinthe_federation/pull/40)
+- Bug Fix: [Preserve entity ordering](https://github.com/DivvyPayHQ/absinthe_federation/pull/37)
+- Bug Fix: [Support key fields validation](https://github.com/DivvyPayHQ/absinthe_federation/pull/36)
+- Bug Fix: [Fix duplicate resolvers](https://github.com/DivvyPayHQ/absinthe_federation/pull/35)
+
 ## 0.1.9
 
 - Bug Fix: [Fix nested _FieldSet atom conversion](https://github.com/DivvyPayHQ/absinthe_federation/pull/34)
