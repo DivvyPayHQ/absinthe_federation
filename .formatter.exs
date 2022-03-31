@@ -2,5 +2,5 @@
 [
   inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}"],
   line_length: 120,
-  import_deps: [:absinthe]
+  import_deps: [:absinthe, :protobuf]
 ]

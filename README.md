@@ -121,6 +121,49 @@ defmodule MySchema do
 end
 ```
 
+## Tracing
+
+### Register Middlware
+
+```elixir
+defmodule MyApp.MySchema do
+  use Absinthe.Schema
+  use Absinthe.Federation.Schema
++ use Absinthe.Federation.Tracing
+
+  query do
+    ...
+  end
+end
+```
+
+If you have a custom middleware stack, add the federation tracing middleware to the **beginning** of your middleware stack:
+
+```elixir
+def middleware(middleware, _field, _object),
+  do: [Absinthe.Federation.Tracing.Middleware] ++ [...your other middlewares]
+```
+
+### Register the Pipeline
+
+Specify the pipeline in your Absinthe.Plug endpoint:
+
+```elixir
+forward "/graphql", Absinthe.Plug,
+  schema: MyApp.MySchema,
+  pipeline: {Absinthe.Federation.Tracing.Pipeline, :plug}
+```
+
+If you have your own pipeline function, you can add the phases directly:
+
+```elixir
+def my_pipeline_creator(config, pipeline_opts) do
+  config.schema_mod
+  |> Absinthe.Pipeline.for_document(pipeline_opts)
+  |> add_my_phases() # w.e your custom phases are
+  |> Absinthe.Federation.Tracing.Pipeline.add_phases(pipeline_opts) # Add at the end
+end
+```
 ## More Documentation
 
 See additional documentation, including guides, in the [Absinthe.Federation hexdocs](https://hexdocs.pm/absinthe_federation).

@@ -9,6 +9,19 @@ To get started with the project, run `mix deps.get` in the root directory to ins
 ```sh
 $ mix deps.get
 ```
+
+To run tests:
+
+```sh
+$ mix test
+```
+
+To generate tracing proto:
+
+```sh
+$ protoc --elixir_out=./lib/absinthe/federation reports.proto
+```
+
 ### Commit message convention
 
 We follow the [conventional commits specification](https://www.conventionalcommits.org/en) for our commit messages:
