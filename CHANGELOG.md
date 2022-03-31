@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Bug Fix: Loosen absinthe version reqs to allow 1.7.0
+
 ## 0.2.0
 
 - Bug Fix: [Remove federated types when rendering SDL](https://github.com/DivvyPayHQ/absinthe_federation/pull/42)

@@ -2,7 +2,7 @@ defmodule Absinthe.Federation.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/DivvyPayHQ/absinthe_federation"
-  @version "0.2.0"
+  @version "0.2.1"
 
   def project do
     [
@@ -62,7 +62,7 @@ defmodule Absinthe.Federation.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6.5"},
+      {:absinthe, "~> 1.6.5 or ~> 1.7.0"},
       {:dataloader, "~> 1.0.9"},
 
       # Dev
