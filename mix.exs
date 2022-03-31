@@ -32,7 +32,6 @@ defmodule Absinthe.Federation.MixProject do
       description: "Apollo Federation support for Absinthe",
       files: [
         "lib",
-        "priv",
         "*.exs",
         "*.md"
       ],
