@@ -19,6 +19,10 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidWhenExtendsTest do
     end
   """
 
+  test "it should no error when key_fields valid" do
+    assert {_, _} = Code.eval_string(@valid_schema)
+  end
+
   @flat_key_schema """
     defmodule FlatKeySchemaWhenExtends do
       use Absinthe.Schema
@@ -43,6 +47,12 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidWhenExtendsTest do
     end
   """
 
+  test "it should throw an error when flat key fields is not marked @external" do
+    assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
+    assert %{message: "The field \"sku\" is not marked @external in :product object.\n"} = error1
+    assert %{message: "The field \"upc\" is not marked @external in :product object.\n"} = error2
+  end
+
   @nested_key_schema """
     defmodule NestedKeySchemaWhenExtends do
       use Absinthe.Schema
@@ -66,16 +76,6 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidWhenExtendsTest do
       end
     end
   """
-
-  test "it should no error when key_fields valid" do
-    assert {_, _} = Code.eval_string(@valid_schema)
-  end
-
-  test "it should throw an error when flat key fields is not marked @external" do
-    assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
-    assert %{message: "The field \"sku\" is not marked @external in :product object.\n"} = error1
-    assert %{message: "The field \"upc\" is not marked @external in :product object.\n"} = error2
-  end
 
   test "it should throw an error when nested key field is not marked @external" do
     error = ~r/The field \"id\" of @key \"color { id }\" is not marked @external./
