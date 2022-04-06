@@ -20,10 +20,6 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
     end
   """
 
-  test "no errors for valid schema" do
-    assert {_, _} = Code.eval_string(@valid_schema)
-  end
-
   @flat_key_schema """
     defmodule FlatKeySchema do
       use Absinthe.Schema
@@ -155,6 +151,10 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
     end
   end
   """
+
+  test "no errors for valid schema" do
+    assert {_, _} = Code.eval_string(@valid_schema)
+  end
 
   test "it should throw an error when flat key fields not exist" do
     assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
