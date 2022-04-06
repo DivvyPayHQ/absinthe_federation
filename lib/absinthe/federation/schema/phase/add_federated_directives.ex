@@ -35,16 +35,13 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   defp maybe_add_key_directive(node, %{key_fields: fields}) when is_binary(fields) do
     directive = Directive.build("key", fields: fields)
 
-    node
-    |> add_directive(directive)
-    |> mark_referenced()
+    add_directive(node, directive)
   end
 
   defp maybe_add_key_directive(node, %{key_fields: fields}) when is_list(fields) do
     fields
     |> Enum.map(&Directive.build("key", fields: &1))
     |> Enum.reduce(node, &add_directive(&2, &1))
-    |> mark_referenced()
   end
 
   defp maybe_add_key_directive(node, _meta), do: node
@@ -86,11 +83,4 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   end
 
   defp add_directive(node, _directive), do: node
-
-  defp mark_referenced(%{__private__: private} = node) do
-    new_private = Keyword.put(private, :__absinthe_referenced__, true)
-    %{node | __private__: new_private}
-  end
-
-  defp mark_referenced(node), do: node
 end
