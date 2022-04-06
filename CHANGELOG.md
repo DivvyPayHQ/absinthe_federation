@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Bug Fix: [Non-referenced nested types stripped away](https://github.com/DivvyPayHQ/absinthe_federation/pull/48)
+
 ## 0.2.2
 
 - Bug Fix: [Fix key field validation phases to work with camelCase SDL (#46)](https://github.com/DivvyPayHQ/absinthe_federation/pull/46)
