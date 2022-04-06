@@ -20,7 +20,13 @@ defmodule Absinthe.Federation.SchemaTest do
         external()
       end
 
+      field :profile, non_null(:user_profile)
+
       field :extended_field, :boolean, resolve: fn _, _ -> {:ok, true} end
+    end
+
+    object :user_profile do
+      field :avatar_url, :string
     end
   end
 
@@ -31,6 +37,15 @@ defmodule Absinthe.Federation.SchemaTest do
       assert sdl =~ "type User @extends @key(fields: \"id\") {"
     end
 
+    test "renders types that depend on extended types" do
+      sdl = Absinthe.Federation.to_federated_sdl(TestSchema)
+
+      assert sdl =~ "type UserProfile {"
+    end
+
+    # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
+    # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
+    @tag :skip
     test "does not render federated types" do
       sdl = Absinthe.Federation.to_federated_sdl(TestSchema)
 

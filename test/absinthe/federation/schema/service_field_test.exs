@@ -107,9 +107,17 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
         key_fields(["id", "email"])
         field :id, non_null(:id)
         field :email, non_null(:string)
+        field :address, non_null(:address)
 
         field :_resolve_reference, :user do
         end
+      end
+
+      object :address do
+        field :street, non_null(:string)
+        field :city, non_null(:string)
+        field :state, non_null(:string)
+        field :postal_code, non_null(:string)
       end
     end
 
@@ -146,6 +154,23 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       assert sdl =~ "@key(fields: \"email\")"
     end
 
+    test "returns sdl with types on extended types" do
+      query = """
+      {
+        _service {
+          sdl
+        }
+      }
+      """
+
+      assert %{data: %{"_service" => %{"sdl" => sdl}}} = Absinthe.run!(query, TestSchema)
+
+      assert sdl =~ "type Address {"
+    end
+
+    # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
+    # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
+    @tag :skip
     test "returns sdl with federated types/fields removed" do
       query = """
       {
