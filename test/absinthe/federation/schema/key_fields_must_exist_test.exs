@@ -1,6 +1,29 @@
 defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   use Absinthe.Federation.Case, async: true
 
+  @valid_schema """
+    defmodule ValidSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        extends()
+      end
+
+      object :product do
+        extends()
+        key_fields(["productUuid", "name"])
+
+        field :product_uuid, non_null(:id), do: external()
+        field :name, non_null(:string), do: external()
+      end
+    end
+  """
+
+  test "no errors for valid schema" do
+    assert {_, _} = Code.eval_string(@valid_schema)
+  end
+
   @flat_key_schema """
     defmodule FlatKeySchema do
       use Absinthe.Schema
@@ -11,7 +34,7 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
       end
 
       object :product do
-        key_fields(["uuid", "name"])
+        key_fields(["productUuid", "name"])
         field :id, non_null(:id)
       end
     end
@@ -27,11 +50,12 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
       end
 
       object :product_variation do
-        field :id, non_null(:id)
+        field :product_uuid, non_null(:id)
       end
 
       object :product do
-        key_fields("uuid variation { id }")
+        key_fields("uuid variation { productUuid }")
+
         field :upc, non_null(:string)
         field :sku, non_null(:string)
         field :variation, non_null(:product_variation)
@@ -134,12 +158,12 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
 
   test "it should throw an error when flat key fields not exist" do
     assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
-    assert %{message: "The @key \"uuid\" does not exist in :product object.\n"} = error1
+    assert %{message: "The @key \"productUuid\" does not exist in :product object.\n"} = error1
     assert %{message: "The @key \"name\" does not exist in :product object.\n"} = error2
   end
 
   test "it should throw an error when nested key fields not exist in object" do
-    error = ~r/The field \"uuid\" of @key \"uuid variation { id }\" does not exist./
+    error = ~r/The field \"uuid\" of @key \"uuid variation { productUuid }\" does not exist./
     assert_raise(Absinthe.Schema.Error, error, fn -> Code.eval_string(@nested_key_schema) end)
   end
 
