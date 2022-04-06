@@ -14,7 +14,7 @@ Install from [Hex.pm](https://hex.pm/packages/absinthe_federation):
 ```elixir
 def deps do
   [
-    {:absinthe_federation, "~> 0.2.1"}
+    {:absinthe_federation, "~> 0.2.2"}
   ]
 end
 ```
@@ -103,7 +103,7 @@ defmodule MyApp.MySchema do
   end
 ```
 
-### Resolving structs in _entities queries
+### Resolving structs in \_entities queries
 
 If you need to resolve your struct to a specific type in your schema you can implement the `Absinthe.Federation.Schema.EntityUnion.Resolver` protocol like this:
 
