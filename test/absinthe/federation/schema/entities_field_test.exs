@@ -345,7 +345,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
   end
 
   describe "sdl" do
-    defmodule SDLSchema do
+    defmodule SchemaWithoutExtendedTypes do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -354,8 +354,49 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       end
     end
 
-    test "renders correctly in sdl" do
-      sdl = Absinthe.Schema.to_sdl(SDLSchema)
+    test "omitted from the sdl if there are no extended types" do
+      sdl = Absinthe.Schema.to_sdl(SchemaWithoutExtendedTypes)
+      refute sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
+    end
+
+    defmodule SchemaWithExtendedTypeFromAnotherSubgraph do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :foo, :bar
+      end
+
+      object :bar do
+        key_fields("id")
+        extends()
+
+        field :id, non_null(:id), do: external()
+      end
+    end
+
+    test "correctly renders in the sdl if there are extended types from another subgraph" do
+      sdl = Absinthe.Schema.to_sdl(SchemaWithExtendedTypeFromAnotherSubgraph)
+      assert sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
+    end
+
+    defmodule SchemaWithExtendableType do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :foo, :bar
+      end
+
+      object :bar do
+        key_fields("id")
+
+        field :id, :string
+      end
+    end
+
+    test "correctly renders in the sdl if the schema introduces extendable types" do
+      sdl = Absinthe.Schema.to_sdl(SchemaWithExtendableType)
       assert sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
     end
   end
