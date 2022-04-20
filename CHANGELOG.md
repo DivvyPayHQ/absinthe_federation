@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.4
+
+- Bug Fix: [Composition error when there are no types for union \_Entity](https://github.com/DivvyPayHQ/absinthe_federation/pull/50)
+
 ## 0.2.3
 
 - Bug Fix: [Non-referenced nested types stripped away](https://github.com/DivvyPayHQ/absinthe_federation/pull/48)
