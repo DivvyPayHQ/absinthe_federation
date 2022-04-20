@@ -163,5 +163,35 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       sdl = Absinthe.Schema.to_sdl(MacroSchema)
       assert sdl =~ "union _Entity = User"
     end
+
+    defmodule MacroSchemaWithNoTypesForUnionEntity do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :foo, :string
+      end
+    end
+
+    test "omitted from the sdl if there are no types for union _Entity in macro based schema" do
+      sdl = Absinthe.Schema.to_sdl(MacroSchemaWithNoTypesForUnionEntity)
+      refute sdl =~ "union _Entity"
+    end
+
+    defmodule SDLSchemaNoTypesForUnionEntity do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      import_sdl """
+      type Query {
+        foo: Boolean
+      }
+      """
+    end
+
+    test "omitted from the sdl if there are no types for union _Entity in sdl based schema" do
+      sdl = Absinthe.Schema.to_sdl(SDLSchemaNoTypesForUnionEntity)
+      refute sdl =~ "union _Entity"
+    end
   end
 end
