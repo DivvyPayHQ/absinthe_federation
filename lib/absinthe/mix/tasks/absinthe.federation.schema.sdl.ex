@@ -9,15 +9,15 @@ defmodule Mix.Tasks.Absinthe.Federation.Schema.Sdl do
   @moduledoc """
   Generate a `schema.graphql` file.
   ## Usage
-      mix absinthe.schema.sdl [OPTIONS] [FILENAME]
+      mix absinthe.federation.schema.sdl [OPTIONS] [FILENAME]
   ## Options
   * `--schema` - The name of the `Absinthe.Schema` module defining the schema to be generated.
      Default: As [configured](https://hexdocs.pm/mix/Mix.Config.html) for `:absinthe` `:schema`
   ## Examples
   Write to default path `#{@default_filename}` using the `:schema` configured for the `:absinthe` application:
-      mix absinthe.schema.sdl
+      mix absinthe.federation.schema.sdl
   Write to path `/path/to/schema.graphql` using the `MySchema` schema
-      mix absinthe.schema.sdl --schema MySchema /path/to/schema.graphql
+      mix absinthe.federation.schema.sdl --schema MySchema /path/to/schema.graphql
   """
 
   defmodule Options do
