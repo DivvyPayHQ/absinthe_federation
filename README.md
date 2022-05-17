@@ -52,7 +52,7 @@ defmodule MyApp.MySchema do
 + use Absinthe.Federation.Schema
 
   query do
-+   extends()
++   directive :extends
 
     field :review, :review do
       arg(:id, non_null(:id))
@@ -62,12 +62,10 @@ defmodule MyApp.MySchema do
   end
 
   object :product do
-+   key_fields("upc")
-+   extends()
++   directive :key, fields: "upc"
++   directive :extends
 
-    field :upc, non_null(:string) do
-+     external()
-    end
++   field :upc, non_null(:string), directives: [:external]
 
     field(:reviews, list_of(:review)) do
       resolve(&ReviewResolver.get_reviews_for_product/3)

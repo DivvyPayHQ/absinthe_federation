@@ -157,7 +157,7 @@ defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   end
 
   test "it should throw an error when flat key fields not exist" do
-    assert %{phase_errors: [error2, error1]} = catch_error(Code.eval_string(@flat_key_schema))
+    assert %{phase_errors: [error1, error2]} = catch_error(Code.eval_string(@flat_key_schema))
     assert %{message: "The @key \"productUuid\" does not exist in :product object.\n"} = error1
     assert %{message: "The @key \"name\" does not exist in :product object.\n"} = error2
   end
