@@ -42,9 +42,18 @@ defmodule Absinthe.Federation.Notation do
         id: ID!
       }
   """
-  defmacro key_fields(fields) when is_binary(fields) or is_list(fields) do
+  @deprecated "Use absinthe built in directive/2 macro"
+  defmacro key_fields(fieldset) when is_binary(fieldset) do
     quote do
-      meta :key_fields, unquote(fields)
+      directive :key, fields: unquote(fieldset)
+    end
+  end
+
+  defmacro key_fields(fields) when is_list(fields) do
+    for fieldset <- fields do
+      quote do
+        directive :key, fields: unquote(fieldset)
+      end
     end
   end
 
@@ -75,9 +84,10 @@ defmodule Absinthe.Federation.Notation do
   This type extension in the Reviews service extends the User type from the Users service.
   It extends it for the purpose of adding a new field called reviews, which returns a list of `Review`s.
   """
+  @deprecated "Use absinthe built in directive/2 macro"
   defmacro external() do
     quote do
-      meta :external, true
+      directive :external
     end
   end
 
@@ -117,9 +127,10 @@ defmodule Absinthe.Federation.Notation do
   to know the `email` of the `User` from the Users service in order to look up the `reviews`.
   This means the `reviews` field / resolver requires the `email` field from the base `User` type.
   """
-  defmacro requires_fields(fields) when is_binary(fields) do
+  @deprecated "Use absinthe built in directive/2 macro"
+  defmacro requires_fields(fieldset) when is_binary(fieldset) do
     quote do
-      meta :requires_fields, unquote(fields)
+      directive :requires, fields: unquote(fieldset)
     end
   end
 
@@ -164,9 +175,10 @@ defmodule Absinthe.Federation.Notation do
   can provide it when going from review to product. `Product.name` is an external field
   on an external type which is why the local type extension of `Product` and annotation of `name` is required.
   """
-  defmacro provides_fields(fields) when is_binary(fields) do
+  @deprecated "Use absinthe built in directive/2 macro"
+  defmacro provides_fields(fieldset) when is_binary(fieldset) do
     quote do
-      meta :provides_fields, unquote(fields)
+      directive :provides, fields: unquote(fieldset)
     end
   end
 
@@ -188,9 +200,10 @@ defmodule Absinthe.Federation.Notation do
         id: ID!
       }
   """
+  @deprecated "Use absinthe built in directive/2 macro"
   defmacro extends() do
     quote do
-      meta :extends, true
+      directive :extends
     end
   end
 end

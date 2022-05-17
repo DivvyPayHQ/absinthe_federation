@@ -27,7 +27,15 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
         object
 
       true ->
-        key_fields = get_in(object.__private__, [:meta, :key_fields])
+        key_fields = object.directives
+        |> Enum.filter(fn %{name: name} -> name == "key" end)
+        |> Enum.map(fn
+          %{arguments: [%{input_value: %{content: %{value: fieldset}}}]} -> fieldset
+          %{arguments: [%{value: fieldset}]} -> fieldset
+        end)
+        # IO.inspect(object.directives, label: "object.directives")
+        # IO.inspect(key_fields, label: "key_fields")
+
         validate_key_fields(key_fields, object, adapter)
     end
   end
@@ -82,7 +90,7 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
   end
 
   defp is_defining_or_extending?(object) do
-    not is_nil(get_in(object.__private__, [:meta, :key_fields]))
+    Enum.find_value(object.directives, false, fn %{name: name} -> name == "key" end)
   end
 
   defp in?(key, fields, adapter) do

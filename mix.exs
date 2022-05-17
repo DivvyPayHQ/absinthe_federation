@@ -62,7 +62,7 @@ defmodule Absinthe.Federation.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6.5 or ~> 1.7.0"},
+      {:absinthe, path: "../../absinthe-graphql/absinthe"},
       {:dataloader, "~> 1.0.9"},
 
       # Dev
