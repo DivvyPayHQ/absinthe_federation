@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.5
+
+- [Disabled key field validation phases](https://github.com/DivvyPayHQ/absinthe_federation/pull/54) due to [errors for nullable key fields](https://github.com/DivvyPayHQ/absinthe_federation/issues/53)
+
 ## 0.2.4
 
 - Bug Fix: [Composition error when there are no types for union \_Entity](https://github.com/DivvyPayHQ/absinthe_federation/pull/50)
