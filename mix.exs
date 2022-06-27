@@ -2,7 +2,7 @@ defmodule Absinthe.Federation.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/DivvyPayHQ/absinthe_federation"
-  @version "0.2.5"
+  @version "0.2.51"
 
   def project do
     [
