@@ -53,10 +53,10 @@ defmodule Absinthe.Federation.Schema do
     # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
     # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
     # |> Absinthe.Pipeline.without(__MODULE__.Phase.AddFederatedTypes)
-    # |> Absinthe.Pipeline.insert_before(
-    #   Absinthe.Phase.Schema.ApplyDeclaration,
-    #   __MODULE__.Phase.RemoveResolveReferenceFields
-    # )
+    |> Absinthe.Pipeline.insert_before(
+      Absinthe.Phase.Schema.ApplyDeclaration,
+      __MODULE__.Phase.RemoveResolveReferenceFields
+    )
   end
 
   @spec to_federated_sdl(schema :: Absinthe.Schema.t()) :: String.t()
