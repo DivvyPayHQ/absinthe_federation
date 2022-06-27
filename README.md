@@ -14,7 +14,7 @@ Install from [Hex.pm](https://hex.pm/packages/absinthe_federation):
 ```elixir
 def deps do
   [
-    {:absinthe_federation, "~> 0.2.4"}
+    {:absinthe_federation, "~> 0.2.5"}
   ]
 end
 ```
