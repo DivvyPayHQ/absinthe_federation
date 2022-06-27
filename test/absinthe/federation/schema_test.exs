@@ -23,6 +23,8 @@ defmodule Absinthe.Federation.SchemaTest do
       field :profile, non_null(:user_profile)
 
       field :extended_field, :boolean, resolve: fn _, _ -> {:ok, true} end
+
+      field :_resolve_reference, :user
     end
 
     object :user_profile do
@@ -43,10 +45,16 @@ defmodule Absinthe.Federation.SchemaTest do
       assert sdl =~ "type UserProfile {"
     end
 
+    test "does not render _resolve_reference fields" do
+      sdl = Absinthe.Federation.to_federated_sdl(TestSchema)
+
+      refute sdl =~ "_resolveReference"
+    end
+
     # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
     # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
     @tag :skip
-    test "does not render federated types" do
+    test "does not render root federated fields" do
       sdl = Absinthe.Federation.to_federated_sdl(TestSchema)
 
       refute sdl =~ "_service: _Service!"

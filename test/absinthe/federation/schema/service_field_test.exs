@@ -168,10 +168,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       assert sdl =~ "type Address {"
     end
 
-    # TODO: Due to an issue found with rendering the SDL we had to revert this functionality
-    # https://github.com/DivvyPayHQ/absinthe_federation/issues/28
-    @tag :skip
-    test "returns sdl with federated types/fields removed" do
+    test "returns sdl with _resolveReference fields removed" do
       query = """
       {
         _service {
@@ -182,7 +179,6 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
 
       assert %{data: %{"_service" => %{"sdl" => sdl}}} = Absinthe.run!(query, TestSchema)
 
-      refute sdl =~ "_service: _Service!"
       refute sdl =~ "_resolveReference"
     end
   end
