@@ -1,6 +1,8 @@
 defmodule Absinthe.Federation.Schema.KeyFieldsMustBeValidWhenExtendsTest do
   use ExUnit.Case, async: true
 
+  @moduletag :skip
+
   @valid_schema """
     defmodule ValidSchemaWhenExtends do
       use Absinthe.Schema
