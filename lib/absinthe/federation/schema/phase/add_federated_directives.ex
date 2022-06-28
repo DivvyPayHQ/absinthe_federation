@@ -29,6 +29,10 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
     |> maybe_add_requires_directive(meta)
     |> maybe_add_provides_directive(meta)
     |> maybe_add_extends_directive(meta)
+    |> maybe_add_shareable_directive(meta)
+    |> maybe_add_override_directive(meta)
+    |> maybe_add_inaccessible_directive(meta)
+    |> maybe_add_tag_directive(meta)
   end
 
   @spec maybe_add_key_directive(term(), map()) :: term()
@@ -77,6 +81,38 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   end
 
   defp maybe_add_extends_directive(node, _meta), do: node
+
+  defp maybe_add_shareable_directive(node, %{shareable: true}) do
+    directive = Directive.build("shareable")
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_shareable_directive(node, _meta), do: node
+
+  defp maybe_add_override_directive(node, %{override_from: subgraph}) do
+    directive = Directive.build("override", from: subgraph)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_override_directive(node, _meta), do: node
+
+  defp maybe_add_inaccessible_directive(node, %{inaccessible: true}) do
+    directive = Directive.build("inaccessible")
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_inaccessible_directive(node, _meta), do: node
+
+  defp maybe_add_tag_directive(node, %{tag: name}) do
+    directive = Directive.build("tag", name: name)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_tag_directive(node, _meta), do: node
 
   defp add_directive(%{directives: directives} = node, directive) do
     %{node | directives: [directive | directives]}

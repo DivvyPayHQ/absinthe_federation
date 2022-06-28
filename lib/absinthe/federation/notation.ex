@@ -193,4 +193,115 @@ defmodule Absinthe.Federation.Notation do
       meta :extends, true
     end
   end
+
+  @doc """
+  Adds the `@shareable` directive to the type to indicate that a field can be resolved by multiple subgraphs.
+
+  ## Example
+
+      object :user do
+        key_fields("id")
+        shareable()
+        field :id, non_null(:id)
+      end
+
+
+  ## SDL Output
+
+      type User @key(fields: "id") @shareable {
+        id: ID!
+      }
+  """
+  defmacro shareable() do
+    quote do
+      meta :shareable, true
+    end
+  end
+
+  @doc """
+  Adds The @override directive is used to indicate that the current subgraph is
+  taking responsibility for resolving the marked field away from the
+  subgraph specified in the from argument.
+
+  ## Example
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :name, :string do
+          override_from("SubgraphA")
+        end
+      end
+
+
+  ## SDL Output
+
+      type User @key(fields: "id") {
+        id: ID!
+        name: String @override(from: "SubgraphA")
+      }
+  """
+  defmacro override_from(subgraph) when is_binary(subgraph) do
+    quote do
+      meta :override_from, unquote(subgraph)
+    end
+  end
+
+  @doc """
+  The `@inaccessible` directive indicates that a field or type should be omitted from the gateway's API schema,
+  even if it's also defined in other subgraphs.
+
+  ## Example
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :name, :string do
+          inaccessible()
+        end
+      end
+
+
+  ## SDL Output
+
+      type User @key(fields: "id") {
+        id: ID!
+        name: String @inaccessible
+      }
+  """
+  defmacro inaccessible() do
+    quote do
+      meta :inaccessible, true
+    end
+  end
+
+  @doc """
+  The `@tag` directive indicates whether to include or exclude the field/type from your contract schema.
+
+  ## Example
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :ssn, :string do
+          tag("internal")
+        end
+      end
+
+
+  ## SDL Output
+
+      type User @key(fields: "id") {
+        id: ID!
+        name: String @tag(name: "internal")
+      }
+  """
+  defmacro tag(name) when is_binary(name) do
+    quote do
+      meta :tag, unquote(name)
+    end
+  end
 end
