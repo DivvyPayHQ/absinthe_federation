@@ -121,6 +121,41 @@ defmodule MySchema do
 end
 ```
 
+### Federation v2
+
+If you are wanting to use Apollo Federation v2 a workaround is required for the `@link` directive
+since absinthe doesn't currently support directives on macro-based schemas (until [this PR](https://github.com/absinthe-graphql/absinthe/pull/1176) is merged). The rest of the
+federation v2 directives have macros you can use, e.g. `shareable`, `tag`, `override_from`, `inaccessible`.
+For an example schema using federation v2 see the [Apollo subgraph compatibility test suite repo pull request](https://github.com/apollographql/apollo-federation-subgraph-compatibility/pull/119).
+
+```elixir
+defmodule MyApp.MySchema do
+  use Absinthe.Schema
+  use Absinthe.Federation.Schema
+
++ import_sdl """
++   schema @link(url: "https://specs.apollo.dev/federation/v2.0",
++               import: [
++                 "@key",
++                 "@shareable",
++                 "@provides",
++                 "@external",
++                 "@tag",
++                 "@extends",
++                 "@override",
++                 "@inaccessible"
++               ]) {
++     query: RootQueryType
++     mutation: RootMutationType
++   }
++ """
+
+  query do
+    ...
+  end
+end
+```
+
 ## More Documentation
 
 See additional documentation, including guides, in the [Absinthe.Federation hexdocs](https://hexdocs.pm/absinthe_federation).
