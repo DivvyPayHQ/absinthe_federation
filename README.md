@@ -124,9 +124,9 @@ end
 ### Federation v2
 
 If you are wanting to use Apollo Federation v2 a workaround is required for the `@link` directive
-since absinthe doesn't currently support directives on macro based schemas (until [this PR](https://github.com/absinthe-graphql/absinthe/pull/1176) is merged).  The rest of the
-federation v2 directives have macros you can use e.g. `shareable`, `tag`, `override_from`, `inaccessible`
-For an example schema using federation v2 see the [Apollo subgraph compatibility test suite repo pull request](https://github.com/apollographql/apollo-federation-subgraph-compatibility/pull/119)
+since absinthe doesn't currently support directives on macro-based schemas (until [this PR](https://github.com/absinthe-graphql/absinthe/pull/1176) is merged). The rest of the
+federation v2 directives have macros you can use, e.g. `shareable`, `tag`, `override_from`, `inaccessible`.
+For an example schema using federation v2 see the [Apollo subgraph compatibility test suite repo pull request](https://github.com/apollographql/apollo-federation-subgraph-compatibility/pull/119).
 
 ```elixir
 defmodule MyApp.MySchema do
