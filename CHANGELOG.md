@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.53
+
+- [Update directives to match @apollo/subgraph](https://github.com/DivvyPayHQ/absinthe_federation/pull/58)
+
 ## 0.2.52
 
 - Feature: [Add Federation 2 directives](https://github.com/DivvyPayHQ/absinthe_federation/pull/56) (except for @link)
