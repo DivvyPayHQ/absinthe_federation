@@ -75,8 +75,6 @@ defmodule Absinthe.Federation.Schema.Prototype do
     arg :for, :link_purpose
     arg :import, :link_import
 
-    repeatable true
-
     on [:schema]
   end
 
@@ -106,7 +104,18 @@ defmodule Absinthe.Federation.Schema.Prototype do
   even if the field is also defined in other subgraphs.
   """
   directive :inaccessible do
-    on [:field_definition, :object, :interface, :union]
+    on [
+      :field_definition,
+      :object,
+      :interface,
+      :union,
+      :argument_definition,
+      :scalar,
+      :enum,
+      :enum_value,
+      :input_object,
+      :input_field_definition
+    ]
   end
 
   @desc """
@@ -117,6 +126,17 @@ defmodule Absinthe.Federation.Schema.Prototype do
 
     repeatable true
 
-    on [:field_definition, :object, :interface, :union]
+    on [
+      :field_definition,
+      :object,
+      :interface,
+      :union,
+      :argument_definition,
+      :scalar,
+      :enum,
+      :enum_value,
+      :input_object,
+      :input_field_definition
+    ]
   end
 end
