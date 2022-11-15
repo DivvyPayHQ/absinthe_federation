@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0
+
+- **BREAKING**: [Parent type for entities have properly-cased keys](https://github.com/DivvyPayHQ/absinthe_federation/pull/59)
+  > Previously, the entity resolvers had a parent map with atom keys that were
+  > camelCased if the field name in the query was camelCased. With this version,
+  > the parent type's keys will be converted to internal naming convention of
+  > your Absinthe.Adapter, defaulting to snake_cased key names.
+  >
+  > You may need to update your extended type resolvers to receive parent type
+  > maps with snake_cased keys.
+
 ## 0.2.53
 
 - [Update directives to match @apollo/subgraph](https://github.com/DivvyPayHQ/absinthe_federation/pull/58)

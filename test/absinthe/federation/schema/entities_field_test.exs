@@ -344,6 +344,64 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
     end
   end
 
+  describe "parent type with proper case" do
+    defmodule SchemaWithLongKeyFieldName do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :test, :string
+      end
+
+      object :user do
+        key_fields("global_user_id")
+        extends()
+
+        field :global_user_id, non_null(:id), do: external()
+
+        field :verified_at, :string do
+          resolve(fn %{global_user_id: global_user_id} = args, _, _ ->
+            assert is_binary(global_user_id), "Expected binary global_user_id in parent: #{inspect(args)}"
+            {:ok, to_string(DateTime.utc_now())}
+          end)
+        end
+      end
+    end
+
+    test "Resolves entities properly" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "User",
+              globalUserId: "123"
+            },
+            {
+              __typename: "User",
+              globalUserId: "456"
+            }
+          ]) {
+            ...on User {
+              globalUserId
+              verifiedAt
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, SchemaWithLongKeyFieldName, variables: %{})
+
+      assert %{
+               data: %{
+                 "_entities" => [
+                   %{"globalUserId" => "123", "verifiedAt" => "20" <> _},
+                   %{"globalUserId" => "456", "verifiedAt" => "20" <> _}
+                 ]
+               }
+             } = resp
+    end
+  end
+
   describe "sdl" do
     defmodule SchemaWithoutExtendedTypes do
       use Absinthe.Schema

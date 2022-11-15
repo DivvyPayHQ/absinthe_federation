@@ -1,6 +1,7 @@
 defmodule Absinthe.Federation.Schema.EntitiesField do
   @moduledoc false
 
+  alias Absinthe.Adapter.LanguageConventions
   alias Absinthe.Blueprint
   alias Absinthe.Blueprint.Schema.FieldDefinition
   alias Absinthe.Blueprint.Schema.InputValueDefinition
@@ -159,8 +160,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       {:error,
        "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
 
-  defp resolve_reference(nil, _parent, representation, _resolution) do
-    args = convert_keys_to_atom(representation)
+  defp resolve_reference(nil, _parent, representation, %{context: context} = _resolution) do
+    args = convert_keys_to_atom(representation, context)
 
     fn _, _ -> {:ok, args} end
   end
@@ -169,9 +170,9 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
          %{middleware: middleware},
          parent,
          representation,
-         %{schema: schema} = resolution
+         %{schema: schema, context: context} = resolution
        ) do
-    args = convert_keys_to_atom(representation)
+    args = convert_keys_to_atom(representation, context)
 
     middleware
     |> Absinthe.Middleware.unshim(schema)
@@ -189,18 +190,31 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     end
   end
 
-  defp convert_keys_to_atom(map) when is_map(map) do
+  defp convert_keys_to_atom(map, context) when is_map(map) do
     map
     |> Enum.reduce(%{}, fn {k, v}, acc ->
-      k = convert_key(k)
-      v = convert_keys_to_atom(v)
+      k = convert_key(k, context)
+      v = convert_keys_to_atom(v, context)
       Map.put(acc, k, v)
     end)
   end
 
-  defp convert_keys_to_atom(v), do: v
+  defp convert_keys_to_atom(v, _context), do: v
 
-  defp convert_key(k), do: String.to_atom(k)
+  defp convert_key(k, context) do
+    adapter = Map.get(context, :adapter, LanguageConventions)
+
+    if adapter_has_to_internal_name_modifier?(adapter) do
+      adapter.to_internal_name(k, :field)
+    else
+      k
+    end
+    |> String.to_atom()
+  end
+
+  defp adapter_has_to_internal_name_modifier?(adapter) do
+    Keyword.get(adapter.__info__(:functions), :to_internal_name) == 2
+  end
 
   defp only_resolver_middleware({{Absinthe.Resolution, :call}, _}), do: true
 
