@@ -2,7 +2,8 @@
 
 ## 0.3.0
 
-- **BREAKING**: [Parent type for entities have properly-cased keys](https://github.com/DivvyPayHQ/absinthe_federation/pull/59)
+- **BREAKING**: [Parent type for entities to have properly-cased keys](https://github.com/DivvyPayHQ/absinthe_federation/pull/59)
+
   > Previously, the entity resolvers had a parent map with atom keys that were
   > camelCased if the field name in the query was camelCased. With this version,
   > the parent type's keys will be converted to internal naming convention of
@@ -10,6 +11,26 @@
   >
   > You may need to update your extended type resolvers to receive parent type
   > maps with snake_cased keys.
+
+- **BREAKING**: [@key directive to convert snake_cased field names to camelCased](https://github.com/DivvyPayHQ/absinthe_federation/pull/60)
+
+  > Previously, the key_fields directive was used with camelCased field names,
+  > such as `key_fields("someLongKeyName")`. This translated to
+  > `@key(fields: "someLongKeyName")` in the schema. If the directive was added
+  > with `key_fields("some_long_key_name")`, it translated to
+  > `@key(fields: "some_long_key_name")` in the schema.
+  >
+  > With this version, adding snake_cased keys with this directive will be
+  > converted to the external naming convention of your Absinthe.Adapter,
+  > defaulting to camelCased field, such as
+  > `key_fields("some_long_key_name")` resulting in
+  > `@key(fields: "someLongKeyName")`.
+  >
+  > - If you were using the key_fields directive with camelCased field names,
+  >   they may be refactored later since they will not be modified.
+  > - If you were using it with snake_cased field names such as
+  >   `key_fields("some_long_key_name")` you may need to make sure this change
+  >   does not affect your schema.
 
 ## 0.2.53
 
