@@ -104,7 +104,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       end
 
       object :user do
-        key_fields(["id", "email"])
+        key_fields(["id", "email", "secondary_id"])
         field :id, non_null(:id)
         field :email, non_null(:string)
         field :address, non_null(:address)
@@ -152,6 +152,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       assert sdl =~ "query: RootQueryType"
       assert sdl =~ "@key(fields: \"id\")"
       assert sdl =~ "@key(fields: \"email\")"
+      assert sdl =~ "@key(fields: \"secondaryId\")"
     end
 
     test "returns sdl with types on extended types" do

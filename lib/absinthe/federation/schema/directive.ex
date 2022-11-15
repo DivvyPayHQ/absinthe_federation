@@ -1,6 +1,7 @@
 defmodule Absinthe.Federation.Schema.Directive do
   @moduledoc false
 
+  alias Absinthe.Adapter.LanguageConventions
   alias Absinthe.Blueprint
   alias Absinthe.Blueprint.Directive, as: BlueprintDirective
   alias Absinthe.Blueprint.Input.Argument
@@ -28,12 +29,18 @@ defmodule Absinthe.Federation.Schema.Directive do
   def build(name, fields) when is_binary(name) and is_list(fields) do
     %BlueprintDirective{
       __reference__: Notation.build_reference(__ENV__),
-      name: name,
-      arguments: build_arguments(fields)
+      name: to_external_name(name),
+      arguments: build_arguments(name, fields)
     }
   end
 
-  defp build_arguments(fields) when is_list(fields) do
+  defp build_arguments("key", fields) when is_list(fields) do
+    fields
+    |> Enum.map(fn {key, value} -> {key, to_external_name(value)} end)
+    |> Enum.map(&build_argument/1)
+  end
+
+  defp build_arguments(_name, fields) when is_list(fields) do
     Enum.map(fields, &build_argument/1)
   end
 
@@ -47,5 +54,15 @@ defmodule Absinthe.Federation.Schema.Directive do
       },
       source_location: %SourceLocation{line: 0, column: 0}
     }
+  end
+
+  defp to_external_name(key) when is_atom(key) do
+    key
+    |> Atom.to_string()
+    |> to_external_name
+  end
+
+  defp to_external_name(key) when is_binary(key) do
+    LanguageConventions.to_external_name(key, :directive)
   end
 end
