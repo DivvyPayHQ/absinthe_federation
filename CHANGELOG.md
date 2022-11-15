@@ -20,8 +20,9 @@
   > with `key_fields("some_long_key_name")`, it translated to
   > `@key(fields: "some_long_key_name")` in the schema.
   >
-  > With this version, adding snake_cased keys with this directive will properly
-  > convert them to camelCased versions in the schema, such as
+  > With this version, adding snake_cased keys with this directive will be
+  > converted to the external naming convention of your Absinthe.Adapter,
+  > defaulting to camelCased field, such as
   > `key_fields("some_long_key_name")` resulting in
   > `@key(fields: "someLongKeyName")`.
   >
