@@ -1,6 +1,7 @@
 defmodule Absinthe.Federation.Schema.EntitiesField do
   @moduledoc false
 
+  alias Absinthe.Adapter.LanguageConventions
   alias Absinthe.Blueprint
   alias Absinthe.Blueprint.Schema.FieldDefinition
   alias Absinthe.Blueprint.Schema.InputValueDefinition
@@ -200,7 +201,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
 
   defp convert_keys_to_atom(v), do: v
 
-  defp convert_key(k), do: String.to_atom(k)
+  defp convert_key(k), do: k |> LanguageConventions.to_internal_name(:field) |> String.to_atom()
 
   defp only_resolver_middleware({{Absinthe.Resolution, :call}, _}), do: true
 
