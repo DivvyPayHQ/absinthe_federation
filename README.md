@@ -73,7 +73,7 @@ defmodule MyApp.MySchema do
       resolve(&ReviewResolver.get_reviews_for_product/3)
     end
 
-+   field(:_resolve_reference, :product) do
++   field(:__resolve_reference, :product) do
 +     resolve(&ProductResolver.get_product_by_upc/3)
 +   end
   end
