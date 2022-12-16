@@ -338,6 +338,8 @@ defmodule Absinthe.Federation.Notation do
   defmacro link(opts) when is_list(opts) do
     quote do
       opts = unquote(opts)
+      query_type = Keyword.get(opts, :query_type_name, "RootQueryType")
+      mutation_type = Keyword.get(opts, :mutation_type_name, "RootMutationType")
       url_arg = opts |> Keyword.fetch!(:url) |> (&~s(url: \"#{&1}\")).()
 
       import_arg =
@@ -359,8 +361,8 @@ defmodule Absinthe.Federation.Notation do
 
       import_sdl """
         schema @link(#{args}) {
-          query: RootQueryType
-          mutation: RootMutationType
+          query: #{query_type}
+          mutation: #{mutation_type}
         }
       """
     end
