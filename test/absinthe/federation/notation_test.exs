@@ -8,11 +8,11 @@ defmodule Absinthe.Federation.NotationTest do
 
       link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
 
-      import_sdl("scalar Foo")
+      import_sdl("scalar RandomNumber")
 
       query do
         field :me, :user
-        field :foo, non_null(:foo)
+        field :random_number, non_null(:random_number)
       end
 
       object :user do
@@ -39,8 +39,8 @@ defmodule Absinthe.Federation.NotationTest do
 
     test "importing federation 2 directives doesn't forbid using import_sdl macro later" do
       sdl = Absinthe.Schema.to_sdl(MacroSchema)
-      assert sdl =~ "scalar Foo"
-      assert sdl =~ "foo: Foo!"
+      assert sdl =~ "scalar RandomNumber"
+      assert sdl =~ "randomNumber: RandomNumber!"
     end
 
     test "can namespace imported directives" do

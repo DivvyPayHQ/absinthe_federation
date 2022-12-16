@@ -152,7 +152,7 @@ end
 
 ### Using `@link` with custom query and mutation types
 
-If your root query and mutations have custom type names, you can indicate it in the @link.
+If your root query and mutations have custom type names, you can indicate it in the `@link`.
 
 ```elixir
 defmodule MyApp.MySchema do
