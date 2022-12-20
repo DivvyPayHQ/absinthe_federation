@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1
+
+- [Add `@link` directive for importing directives](https://github.com/DivvyPayHQ/absinthe_federation/pull/62)
+
+  > Previously, `import_sdl` was necessary to import Federation 2 directives.
+  > The new `link` macro abstracts this and adds the `@link` directive according
+  > to the spec. Please refer to the [README](README.md) for usage details.
+
 ## 0.3.0
 
 - **BREAKING**: [Parent type for entities to have properly-cased keys](https://github.com/DivvyPayHQ/absinthe_federation/pull/59)
