@@ -123,32 +123,68 @@ end
 
 ### Federation v2
 
-If you are wanting to use Apollo Federation v2 a workaround is required for the `@link` directive
-since absinthe doesn't currently support directives on macro-based schemas (until [this PR](https://github.com/absinthe-graphql/absinthe/pull/1176) is merged). The rest of the
-federation v2 directives have macros you can use, e.g. `shareable`, `tag`, `override_from`, `inaccessible`.
-For an example schema using federation v2 see the [Apollo subgraph compatibility test suite repo pull request](https://github.com/apollographql/apollo-federation-subgraph-compatibility/pull/119).
+You can import Apollo Federation v2 directives using the `@link` directive on your top-level schema.
 
 ```elixir
 defmodule MyApp.MySchema do
   use Absinthe.Schema
   use Absinthe.Federation.Schema
 
-+ import_sdl """
-+   schema @link(url: "https://specs.apollo.dev/federation/v2.0",
-+               import: [
-+                 "@key",
-+                 "@shareable",
-+                 "@provides",
-+                 "@external",
-+                 "@tag",
-+                 "@extends",
-+                 "@override",
-+                 "@inaccessible"
-+               ]) {
-+     query: RootQueryType
-+     mutation: RootMutationType
-+   }
-+ """
++ link(
++   url: "https://specs.apollo.dev/federation/v2.0",
++   import: [
++     "@key",
++     "@shareable",
++     "@provides",
++     "@external",
++     "@tag",
++     "@extends",
++     "@override",
++     "@inaccessible"
++   ]
++ )
+
+  query do
+    ...
+  end
+end
+```
+
+### Using `@link` with custom query and mutation types
+
+If your root query and mutations have custom type names, you can indicate it in the `@link`.
+
+```elixir
+defmodule MyApp.MySchema do
+  use Absinthe.Schema
+  use Absinthe.Federation.Schema
+
++ link(url: "https://specs.apollo.dev/federation/v2.0",
++   import: ["@key"],
++   query_type_name: "MyCustomQueryType",
++   mutation_type_name: "MyCustomMutationType"
++ )
+
+  query, name: "MyCustomQueryType" do
+    ...
+  end
+
+  query, name: "MyCustomMutationType" do
+    ...
+  end
+end
+```
+
+### Namespacing and directive renaming with `@link`
+
+`@link` directive supports namespacing and directive renaming according to the specs.
+
+```elixir
+defmodule MyApp.MySchema do
+  use Absinthe.Schema
+  use Absinthe.Federation.Schema
+
++ link(url: "https://specs.apollo.dev/federation/v2.0", import: [%{name: "@key", as: "@primaryKey"}], as: "federation")
 
   query do
     ...

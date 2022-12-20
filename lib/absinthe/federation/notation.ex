@@ -304,4 +304,67 @@ defmodule Absinthe.Federation.Notation do
       meta :tag, unquote(name)
     end
   end
+
+  @doc """
+  The `@link` directive links definitions from an external specification to this schema.
+  Every Federation 2 subgraph uses the `@link` directive to import the other federation-specific directives.
+
+  ## Example
+
+      link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag", "@shareable"])
+
+      query do
+        field :me, :user
+      end
+
+      object :user do
+        key_fields("id")
+        shareable()
+        field :id, non_null(:id)
+
+        field :ssn, :string do
+          tag("internal")
+        end
+      end
+
+  ## SDL Output
+      schema @link(url: \"url: https:\\/\\/specs.apollo.dev\\/federation\\/v2.0\", import: ["@key", "@tag", "@shareable"])
+
+      type User @key(fields: "id") @shareable {
+        id: ID!
+        name: String @tag(name: "internal")
+      }
+  """
+  defmacro link(opts) when is_list(opts) do
+    quote do
+      opts = unquote(opts)
+      query_type = Keyword.get(opts, :query_type_name, "RootQueryType")
+      mutation_type = Keyword.get(opts, :mutation_type_name, "RootMutationType")
+      url_arg = opts |> Keyword.fetch!(:url) |> (&~s(url: \"#{&1}\")).()
+
+      import_arg =
+        opts
+        |> Keyword.fetch!(:import)
+        |> Enum.map(fn
+          arg when is_binary(arg) -> ~s("#{arg}")
+          %{name: name, as: renamed_as} -> ~s({ name: "#{name}", as: "#{renamed_as}" })
+        end)
+        |> (&", import: [#{&1}]").()
+
+      namespace_arg =
+        case Keyword.get(opts, :as) do
+          namespace when is_nil(namespace) -> ""
+          namespace when is_binary(namespace) -> ~s(, as: "#{namespace}")
+        end
+
+      args = "#{url_arg}#{import_arg}#{namespace_arg}"
+
+      import_sdl """
+        schema @link(#{args}) {
+          query: #{query_type}
+          mutation: #{mutation_type}
+        }
+      """
+    end
+  end
 end
