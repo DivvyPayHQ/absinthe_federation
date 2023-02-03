@@ -165,11 +165,11 @@ defmodule MyApp.MySchema do
 +   mutation_type_name: "MyCustomMutationType"
 + )
 
-  query, name: "MyCustomQueryType" do
+  query name: "MyCustomQueryType" do
     ...
   end
 
-  query, name: "MyCustomMutationType" do
+  query name: "MyCustomMutationType" do
     ...
   end
 end
