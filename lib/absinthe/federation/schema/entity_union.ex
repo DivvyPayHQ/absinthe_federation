@@ -62,23 +62,40 @@ defprotocol Absinthe.Federation.Schema.EntityUnion.Resolver do
 end
 
 defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
-  def resolve_type(%struct_name{}, _resolution) do
+  alias Absinthe.Adapter.LanguageConventions
+
+  def resolve_type(%struct_name{}, resolution) do
     struct_name
     |> Module.split()
     |> List.last()
-    |> String.downcase()
+    |> to_internal_name(resolution.adapter)
+  end
+
+  def resolve_type(%{__typename: typename}, resolution) do
+    to_internal_name(typename, resolution.adapter)
+  end
+
+  def resolve_type(%{"__typename" => typename}, resolution) do
+    to_internal_name(typename, resolution.adapter)
+  end
+
+  defp to_internal_name(name, adapter) when is_nil(adapter) do
+    name
+    |> LanguageConventions.to_internal_name(:type)
     |> String.to_existing_atom()
   end
 
-  def resolve_type(%{__typename: typename}, _resolution) do
-    typename
-    |> Macro.underscore()
-    |> String.to_existing_atom()
+  defp to_internal_name(name, adapter) when is_atom(adapter) do
+    if adapter_has_to_internal_name_modifier?(adapter) do
+      name
+      |> adapter.to_internal_name(:type)
+      |> String.to_existing_atom()
+    else
+      to_internal_name(name, nil)
+    end
   end
 
-  def resolve_type(%{"__typename" => typename}, _resolution) do
-    typename
-    |> Macro.underscore()
-    |> String.to_existing_atom()
+  defp adapter_has_to_internal_name_modifier?(adapter) do
+    Keyword.get(adapter.__info__(:functions), :to_internal_name) == 2
   end
 end
