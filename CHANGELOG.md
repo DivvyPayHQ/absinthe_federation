@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+- Bug Fix: [Handle entity type names with multiple words](https://github.com/DivvyPayHQ/absinthe_federation/pull/68)
+
 ## 0.3.1
 
 - [Add `@link` directive for importing directives](https://github.com/DivvyPayHQ/absinthe_federation/pull/62)
