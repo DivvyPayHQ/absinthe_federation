@@ -182,6 +182,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       def context(ctx) do
         loader =
           Dataloader.new(get_policy: :return_nil_on_error)
+          |> Dataloader.add_source(ASourceWithNonmapBatchesKey, struct(ASourceWithNonmapBatchesKey))
+          |> Dataloader.add_source(ASourceWithoutBatchesKey, struct(ASourceWithoutBatchesKey))
           |> Dataloader.add_source(
             SpecItem.Loader,
             SpecItem.Loader.data()
@@ -205,6 +207,8 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
           resolve(fn _root, %{item_id: id} = args, info ->
             dataloader(SpecItem.Loader).(id, args, info)
           end)
+
+          # resolve dataloader(SpecItem.Loader)
         end
       end
     end
