@@ -207,8 +207,6 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
           resolve(fn _root, %{item_id: id} = args, info ->
             dataloader(SpecItem.Loader).(id, args, info)
           end)
-
-          # resolve dataloader(SpecItem.Loader)
         end
       end
     end
