@@ -97,11 +97,9 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
             {:resolver, r}
         end
       end)
-      |> Enum.flat_map(fn resolvers ->
-        case resolvers do
-          {{:dataloader, _}, v} -> Enum.take(v, 1)
-          {{:resolver, _}, v} -> v
-        end
+      |> Enum.flat_map(fn
+        {{:dataloader, _}, v} = _resolvers -> Enum.take(v, 1)
+        {{:resolver, _}, v} = _resolvers -> v
       end)
 
     value =
@@ -114,16 +112,16 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       resolution.arguments.representations
       |> Enum.reduce(%{errors: [], value: []}, fn r, acc ->
         case Map.get(value, r) do
-          {:error, err} -> Map.update(acc, :errors, [], fn v -> v ++ [err] end)
-          result -> Map.update(acc, :value, [], fn v -> v ++ [result] end)
+          {:error, err} -> Map.update!(acc, :errors, &[err | &1])
+          result -> Map.update!(acc, :value, &[result | &1])
         end
       end)
 
     %{
       resolution
       | state: :resolved,
-        errors: Map.get(res, :errors),
-        value: Map.get(res, :value)
+        errors: Enum.reverse(res[:errors]),
+        value: Enum.reverse(res[:value])
     }
   end
 
@@ -176,8 +174,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
 
     middleware
     |> Absinthe.Middleware.unshim(schema)
-    |> Enum.filter(&only_resolver_middleware/1)
-    |> List.first()
+    |> Enum.find(nil, &only_resolver_middleware/1)
     |> case do
       {_, resolve_ref_func} when is_function(resolve_ref_func, 2) ->
         fn _, _ -> resolve_ref_func.(args, resolution) end
@@ -191,11 +188,10 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   end
 
   defp convert_keys_to_atom(map, context) when is_map(map) do
-    map
-    |> Enum.reduce(%{}, fn {k, v}, acc ->
+    Map.new(map, fn {k, v} ->
       k = convert_key(k, context)
       v = convert_keys_to_atom(v, context)
-      Map.put(acc, k, v)
+      {k, v}
     end)
   end
 
@@ -298,12 +294,12 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
 
   defp find_relevant_dataloader(%Dataloader{sources: sources}) do
     {source, loader} =
-      Enum.find(sources, fn {_, %{batches: batches}} ->
-        length(Map.values(batches)) > 0
+      Enum.find(sources, fn {_, source} ->
+        Dataloader.Source.pending_batches?(source)
       end)
 
     %{batches: batches} = loader
-    {:_entities, representation} = batches |> Map.keys() |> List.first()
-    {source, Map.get(representation, :__typename)}
+    {{:_entities, %{__typename: typename}}, _} = Enum.at(batches, 0)
+    {source, typename}
   end
 end
