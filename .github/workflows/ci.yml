@@ -77,7 +77,7 @@ jobs:
 
       - uses: apollographql/federation-subgraph-compatibility@v1
         with:
-          compose: "federation_compatibility/docker-compose.yml"
+          compose: "federation_compatibility_docker_compose.yml"
           schema: "federation_compatibility/schema.graphql"
           port: 4001
           failOnWarning: true
