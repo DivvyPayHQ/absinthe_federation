@@ -16,6 +16,8 @@ jobs:
     strategy:
       matrix:
         include:
+          - elixir: "1.14"
+            otp: "25"
           - elixir: "1.11"
             otp: "23"
           - elixir: "1.10"
@@ -59,12 +61,27 @@ jobs:
         run: |
           mix clean
           mix test
+
       - name: Run unit tests with persistent_term backend
         run: |
           mix clean
           mix test
         env:
           SCHEMA_PROVIDER: persistent_term
+
+      - name: Print federation compatibility schema
+        run: |
+          mix deps.get
+          mix absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out schema.graphql
+        working-directory: ./federation_compatibility
+
+      - uses: apollographql/federation-subgraph-compatibility@v1
+        with:
+          compose: "federation_compatibility/docker-compose.yml"
+          schema: "federation_compatibility/schema.graphql"
+          port: 4001
+          failOnWarning: true
+          failOnRequired: true
 
       - name: Run dialyzer
         run: |

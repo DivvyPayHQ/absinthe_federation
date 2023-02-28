@@ -1,0 +1,7 @@
+services:
+  products:
+    build:
+      context: .
+      dockerfile: federation_compatibility/Dockerfile
+    ports:
+      - 4001:4001
