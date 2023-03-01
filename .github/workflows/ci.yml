@@ -116,9 +116,7 @@ jobs:
         run: mix deps.get
 
       - name: Print federation compatibility schema
-        run: |
-          mix deps.get
-          mix absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out schema.graphql
+        run: mix absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out schema.graphql
         working-directory: ./federation_compatibility
 
       - name: Test subgraph compatibility

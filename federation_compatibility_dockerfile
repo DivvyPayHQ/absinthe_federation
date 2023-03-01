@@ -20,7 +20,6 @@ COPY federation_compatibility/mix.exs federation_compatibility/mix.lock ./
 COPY federation_compatibility/config config
 ENV SECRET_KEY_BASE=yORg910Gzl54nSsy1HQ1OkKh0sDIj+0eKcSCdt/nyLSl25q41t4Uayqr8BZHSJrI
 
-RUN echo file="$(ls .. -al)" && echo $file
 RUN mix do deps.get, deps.compile
 
 # compile and build release
