@@ -9,8 +9,8 @@ on:
       - main
 
 jobs:
-  test:
-    name: Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
+  unit_tests:
+    name: Unit tests Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-18.04
 
     strategy:
@@ -69,21 +69,63 @@ jobs:
         env:
           SCHEMA_PROVIDER: persistent_term
 
+      - name: Run dialyzer
+        run: |
+          mkdir -p priv/plts/{local,core}
+          MIX_ENV=test mix dialyzer
+
+  federation_compatibility_tests:
+    name: Federation compatibility tests
+    runs-on: ubuntu-18.04
+
+    strategy:
+      matrix:
+        include:
+          - elixir: "1.14"
+            otp: "25"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Elixir
+        uses: erlef/setup-elixir@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Restore deps cache
+        uses: actions/cache@v2
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+
+      - name: Restore _build cache
+        uses: actions/cache@v2
+        with:
+          path: _build
+          key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+
+      - name: Restore plt cache
+        uses: actions/cache@v2
+        with:
+          path: priv/plts
+          key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+
+      - name: Install deps
+        run: mix deps.get
+
       - name: Print federation compatibility schema
         run: |
           mix deps.get
           mix absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out schema.graphql
         working-directory: ./federation_compatibility
 
-      - uses: apollographql/federation-subgraph-compatibility@v1
+      - name: Test subgraph compatibility
+        uses: apollographql/federation-subgraph-compatibility@v1
         with:
           compose: "federation_compatibility_docker_compose.yml"
           schema: "federation_compatibility/schema.graphql"
           port: 4001
           failOnWarning: true
           failOnRequired: true
-
-      - name: Run dialyzer
-        run: |
-          mkdir -p priv/plts/{local,core}
-          MIX_ENV=test mix dialyzer
