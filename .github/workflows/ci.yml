@@ -14,7 +14,7 @@ permissions:
 jobs:
   unit_tests:
     name: Unit tests Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
@@ -79,7 +79,7 @@ jobs:
 
   federation_compatibility_tests:
     name: Federation compatibility tests
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:

@@ -66,7 +66,7 @@ defmodule Absinthe.Federation.MixProject do
       {:dataloader, "~> 1.0.9 or ~> 1.0.10"},
 
       # Dev
-      {:dialyxir, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, ">= 1.0.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
     ]
   end
