@@ -284,8 +284,8 @@ defmodule ProductsWeb.Schema do
         {:ok,
          %{
            user
-           | total_products_created: representation[:totalProductsCreated],
-             years_of_employment: representation[:yearsOfEmployment]
+           | total_products_created: representation[:total_products_created],
+             years_of_employment: representation[:years_of_employment]
          }}
 
       nil ->
@@ -370,8 +370,7 @@ defmodule ProductsWeb.Schema do
       %User{
         email: "support@apollographql.com",
         name: "Jane Smith",
-        total_products_created: 1337,
-        years_of_employment: 10
+        total_products_created: 1337
       }
     ]
 end
