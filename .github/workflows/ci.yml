@@ -49,6 +49,7 @@ jobs:
           key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
 
       - name: Restore plt cache
+        if: ${{ matrix.otp == '25' && matrix.elixir == '1.14' }}
         uses: actions/cache@v3
         with:
           path: priv/plts
@@ -73,6 +74,7 @@ jobs:
           SCHEMA_PROVIDER: persistent_term
 
       - name: Run dialyzer
+        if: ${{ matrix.otp == '25' && matrix.elixir == '1.14' }}
         run: |
           mkdir -p priv/plts/{local,core}
           MIX_ENV=test mix dialyzer
