@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  pull-requests: write
+
 jobs:
   unit_tests:
     name: Unit tests Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
@@ -117,6 +120,7 @@ jobs:
         with:
           compose: "federation_compatibility_docker_compose.yml"
           schema: "federation_compatibility/schema.graphql"
+          token: ${{ secrets.GITHUB_TOKEN }}
           port: 4001
           failOnWarning: true
           failOnRequired: true
