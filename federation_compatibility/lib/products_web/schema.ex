@@ -27,7 +27,7 @@ defmodule ProductsWeb.Schema do
   end
 
   extend schema do
-    directive :link,
+    directive(:link,
       url: "https://specs.apollo.dev/federation/v2.0",
       import: [
         "@extends",
@@ -40,6 +40,7 @@ defmodule ProductsWeb.Schema do
         "@shareable",
         "@tag"
       ]
+    )
   end
 
   @desc """
@@ -122,7 +123,7 @@ defmodule ProductsWeb.Schema do
   }
   """
   object :product_research do
-    key_fields("study { caseNumber }")
+    key_fields("study { case_number }")
     field :study, non_null(:case_study)
     field :outcome, :string
 
@@ -130,7 +131,7 @@ defmodule ProductsWeb.Schema do
       resolve(fn representation, _ctx ->
         {:ok,
          Enum.find(product_research(), fn p ->
-           representation.study.caseNumber === p.study.case_number
+           representation.study.case_number === p.study.case_number
          end)}
       end)
     end
@@ -369,7 +370,8 @@ defmodule ProductsWeb.Schema do
       %User{
         email: "support@apollographql.com",
         name: "Jane Smith",
-        total_products_created: 1337
+        total_products_created: 1337,
+        years_of_employment: 10
       }
     ]
 end
