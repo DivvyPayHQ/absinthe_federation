@@ -90,6 +90,17 @@ jobs:
             otp: "25"
 
     steps:
+      - name: Save action secrets
+        id: actionsecrets
+        shell: bash
+        run: |
+          if [ $IS_FORK != "true" ]; then
+            echo "github_token=$GITHUB_TOKEN" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -122,7 +133,7 @@ jobs:
         with:
           compose: "federation_compatibility_docker_compose.yml"
           schema: "federation_compatibility/schema.graphql"
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.actionsecrets.outputs.github_token }}
           port: 4001
           failOnWarning: true
           failOnRequired: true
