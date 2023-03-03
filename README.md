@@ -45,6 +45,7 @@ end
 ## Usage
 
 ### Macro based schemas (recommended)
+> Note: Implementing the reference resolver with function capture does not work at the moment. Hence, the below example uses an anonymous function. 
 
 ```elixir
 defmodule MyApp.MySchema do
@@ -74,7 +75,9 @@ defmodule MyApp.MySchema do
     end
 
 +   field(:_resolve_reference, :product) do
-+     resolve(&ProductResolver.get_product_by_upc/3)
++     resolve(fn parent, args, context -> 
+        ProductResolver.get_product_by_upc(parent, args, context)
+      end)
 +   end
   end
 end
