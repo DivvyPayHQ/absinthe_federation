@@ -28,6 +28,7 @@ defmodule Absinthe.Federation.Schema do
 
       use Absinthe.Federation.Notation
       import_types Absinthe.Federation.Types
+      import_types Absinthe.Federation.Schema.Prototype
     end
   end
 
