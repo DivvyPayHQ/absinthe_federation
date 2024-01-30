@@ -5,7 +5,7 @@ defmodule Products.MixProject do
     [
       app: :products,
       version: "0.1.0",
-      elixir: "~> 1.10",
+      elixir: "~> 1.12",
       elixirc_paths: ["lib"],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
