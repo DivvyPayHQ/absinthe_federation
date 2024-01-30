@@ -8,7 +8,7 @@ defmodule Absinthe.Federation.MixProject do
     [
       app: :absinthe_federation,
       version: @version,
-      elixir: "~> 1.10",
+      elixir: "~> 1.12",
       elixirc_paths: elixirc_paths(Mix.env()),
       elixirc_options: [warnings_as_errors: true],
       build_embedded: Mix.env() == :prod,
