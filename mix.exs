@@ -62,9 +62,8 @@ defmodule Absinthe.Federation.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.6.5 or ~> 1.7.0 or ~> 1.7.1"},
-      {:dataloader, "~> 1.0.9 or ~> 1.0.10"},
-
+      {:absinthe, "~> 1.7"},
+      {:dataloader, "~> 1.0.9 or ~> 1.0.10 or ~> 2.0.0"},
       # Dev
       {:dialyxir, ">= 1.0.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
