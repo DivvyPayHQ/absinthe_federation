@@ -10,6 +10,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       use Absinthe.Schema
 
       query do
+        field :me, :user
       end
     end
 
