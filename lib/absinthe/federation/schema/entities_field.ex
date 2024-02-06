@@ -279,7 +279,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       case res do
         {:ok, data} -> {arg, data}
         {:error, _} = e -> {arg, e}
-        nil -> {arg, nil}
+        data -> {arg, data}
       end
     end)
   end

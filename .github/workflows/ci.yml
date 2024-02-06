@@ -21,10 +21,8 @@ jobs:
         include:
           - elixir: "1.14"
             otp: "25"
-          - elixir: "1.11"
+          - elixir: "1.12"
             otp: "23"
-          - elixir: "1.10"
-            otp: "22"
 
     steps:
       - name: Checkout

@@ -1,12 +1,20 @@
 defmodule Absinthe.Federation.NotationTest do
   use Absinthe.Federation.Case, async: true
 
+  # With Absinthe 1.7, the @link macro is not needed anymore. The way forward is to use `extend`
+  # See https://github.com/DivvyPayHQ/absinthe_federation#federation-v2
+
   describe "macro schema" do
     defmodule MacroSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
-      link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"])
+      extend schema do
+        directive(:link,
+          url: "https://specs.apollo.dev/federation/v2.0",
+          import: ["@key", "@tag"]
+        )
+      end
 
       import_sdl("scalar RandomNumber")
 
@@ -48,11 +56,13 @@ defmodule Absinthe.Federation.NotationTest do
         use Absinthe.Schema
         use Absinthe.Federation.Schema
 
-        link(
-          url: "https://specs.apollo.dev/federation/v2.0",
-          import: ["@key", "@tag"],
-          as: "federation"
-        )
+        extend schema do
+          directive(:link,
+            url: "https://specs.apollo.dev/federation/v2.0",
+            import: ["@key", "@tag"],
+            as: "federation"
+          )
+        end
 
         query do
           field :hello, :string
@@ -70,11 +80,13 @@ defmodule Absinthe.Federation.NotationTest do
         use Absinthe.Schema
         use Absinthe.Federation.Schema
 
-        link(
-          url: "https://specs.apollo.dev/federation/v2.0",
-          import: ["@key", "@tag", %{name: "@override", as: "@replace"}],
-          as: "federation"
-        )
+        extend schema do
+          directive(:link,
+            url: "https://specs.apollo.dev/federation/v2.0",
+            import: ["@key", "@tag", %{"name" => "@override", "as" => "@replace"}],
+            as: "federation"
+          )
+        end
 
         query do
           field :hello, :string
@@ -84,7 +96,7 @@ defmodule Absinthe.Federation.NotationTest do
       sdl = Absinthe.Schema.to_sdl(MacroSchemaWithRenamedDirectives)
 
       assert sdl =~
-               ~s(schema @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag", {name: "@override", as: "@replace"}], as: "federation"\))
+               ~s(schema @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag", {as: "@replace", name: "@override"}], as: "federation"\))
     end
   end
 end

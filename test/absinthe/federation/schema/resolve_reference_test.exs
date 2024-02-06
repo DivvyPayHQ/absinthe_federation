@@ -38,7 +38,7 @@ defmodule Absinthe.Federation.Schema.ResolveReferenceTest do
   describe "_resolve_reference" do
     test "resolves entity fields correctly" do
       query = """
-        query GetHousePlantEntities($representations: [_Any]) {
+        query GetHousePlantEntities($representations: [_Any!]!) {
           _entities(representations: $representations) {
             ... on HousePlant {
               id
