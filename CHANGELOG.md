@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- [Support Absinthe v1.7.2+ and Dataloader v2+](https://github.com/DivvyPayHQ/absinthe_federation/pull/87)
+- BREAKING CHANGE: `link/1` macro removed in favor of
+  ["extend schema" method](README.md#federation-v2) (drop-in replacement).
+- BREAKING CHANGE: Now requires Absinthe v1.7 or above
+- BREAKING CHANGE: Now requires Elixir v1.12 or above
+
 ## 0.3.2
 
 - Bug Fix: [Handle entity type names with multiple words](https://github.com/DivvyPayHQ/absinthe_federation/pull/68)

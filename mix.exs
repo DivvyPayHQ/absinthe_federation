@@ -2,7 +2,7 @@ defmodule Absinthe.Federation.MixProject do
   use Mix.Project
 
   @source_url "https://github.com/DivvyPayHQ/absinthe_federation"
-  @version "0.3.2"
+  @version "0.4.0"
 
   def project do
     [
@@ -35,7 +35,7 @@ defmodule Absinthe.Federation.MixProject do
         "*.exs",
         "*.md"
       ],
-      maintainers: ["Kaden Wilkinson"],
+      maintainers: ["Doruk Gurleyen", "Eric Wolf"],
       licenses: ["MIT"],
       links: %{github: @source_url}
     ]
