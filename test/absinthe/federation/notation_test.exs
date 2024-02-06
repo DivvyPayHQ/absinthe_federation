@@ -84,8 +84,9 @@ defmodule Absinthe.Federation.NotationTest do
           directive(:link,
             url: "https://specs.apollo.dev/federation/v2.0",
             import: ["@key", "@tag", %{"name" => "@override", "as" => "@replace"}],
-            as: "federation")
-          end
+            as: "federation"
+          )
+        end
 
         query do
           field :hello, :string
