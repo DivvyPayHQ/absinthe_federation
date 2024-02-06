@@ -74,7 +74,7 @@ defmodule Absinthe.Federation.Schema.Prototype do
     arg :as, :string
     arg :for, :link_purpose
     arg :import, :link_import
-
+    repeatable true
     on [:schema]
   end
 
