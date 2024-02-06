@@ -27,7 +27,7 @@ defmodule ProductsWeb.Schema do
   end
 
   extend schema do
-    directive(:link,
+    directive :link,
       url: "https://specs.apollo.dev/federation/v2.0",
       import: [
         "@extends",
@@ -40,7 +40,6 @@ defmodule ProductsWeb.Schema do
         "@shareable",
         "@tag"
       ]
-    )
   end
 
   @desc """

@@ -45,7 +45,8 @@ end
 ## Usage
 
 ### Macro based schemas (recommended)
-> Note: Implementing the reference resolver with function capture does not work at the moment. Hence, the below example uses an anonymous function. 
+
+> Note: Implementing the reference resolver with function capture does not work at the moment. Hence, the below example uses an anonymous function.
 
 ```elixir
 defmodule MyApp.MySchema do
@@ -75,7 +76,7 @@ defmodule MyApp.MySchema do
     end
 
 +   field(:_resolve_reference, :product) do
-+     resolve(fn parent, args, context -> 
++     resolve(fn parent, args, context ->
         ProductResolver.get_product_by_upc(parent, args, context)
       end)
 +   end
@@ -134,7 +135,7 @@ defmodule MyApp.MySchema do
   use Absinthe.Federation.Schema
 
 + extend schema do
-+   directive(:link,
++   directive :link,
 +     url: "https://specs.apollo.dev/federation/v2.0",
 +     import: [
 +       "@key",
@@ -146,7 +147,6 @@ defmodule MyApp.MySchema do
 +       "@override",
 +       "@inaccessible"
 +     ]
-+   )
 + end
 
   query do
@@ -165,11 +165,10 @@ defmodule MyApp.MySchema do
   use Absinthe.Federation.Schema
 
 + extend schema do
-+   directive(:link,
-+     url: "https://specs.apollo.dev/federation/v2.0", 
++   directive :link,
++     url: "https://specs.apollo.dev/federation/v2.0",
 +     import: [%{"name" => "@key", "as" => "@primaryKey"}], # directive renaming
 +     as: "federation" # namespacing
-+   )
 + end
 
   query do
