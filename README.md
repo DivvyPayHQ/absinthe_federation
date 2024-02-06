@@ -126,26 +126,29 @@ end
 
 ### Federation v2
 
-You can import Apollo Federation v2 directives using the `@link` directive on your top-level schema.
+You can import Apollo Federation v2 directives by extending your top-level schema with the `@link` directive.
 
 ```elixir
 defmodule MyApp.MySchema do
   use Absinthe.Schema
   use Absinthe.Federation.Schema
 
-+ link(
-+   url: "https://specs.apollo.dev/federation/v2.0",
-+   import: [
-+     "@key",
-+     "@shareable",
-+     "@provides",
-+     "@external",
-+     "@tag",
-+     "@extends",
-+     "@override",
-+     "@inaccessible"
-+   ]
-+ )
++ extend schema do
++   directive(  
++     :link,
++     url: "https://specs.apollo.dev/federation/v2.0",
++     import: [
++       "@key",
++       "@shareable",
++       "@provides",
++       "@external",
++       "@tag",
++       "@extends",
++       "@override",
++       "@inaccessible"
++     ]
++   )
++ end
 
   query do
     ...
@@ -153,41 +156,23 @@ defmodule MyApp.MySchema do
 end
 ```
 
-### Using `@link` with custom query and mutation types
-
-If your root query and mutations have custom type names, you can indicate it in the `@link`.
-
-```elixir
-defmodule MyApp.MySchema do
-  use Absinthe.Schema
-  use Absinthe.Federation.Schema
-
-+ link(url: "https://specs.apollo.dev/federation/v2.0",
-+   import: ["@key"],
-+   query_type_name: "MyCustomQueryType",
-+   mutation_type_name: "MyCustomMutationType"
-+ )
-
-  query name: "MyCustomQueryType" do
-    ...
-  end
-
-  query name: "MyCustomMutationType" do
-    ...
-  end
-end
-```
-
 ### Namespacing and directive renaming with `@link`
 
-`@link` directive supports namespacing and directive renaming according to the specs.
+`@link` directive supports namespacing and directive renaming (only on **Absinthe >= 1.7.2**) according to the specs.
 
 ```elixir
 defmodule MyApp.MySchema do
   use Absinthe.Schema
   use Absinthe.Federation.Schema
 
-+ link(url: "https://specs.apollo.dev/federation/v2.0", import: [%{name: "@key", as: "@primaryKey"}], as: "federation")
++ extend schema do
++   directive(
++     :link,
++     url: "https://specs.apollo.dev/federation/v2.0", 
++     import: [%{"name" => "@key", "as" => "@primaryKey"}], # directive renaming
++     as: "federation" # namespacing
++   )
++ end
 
   query do
     ...
