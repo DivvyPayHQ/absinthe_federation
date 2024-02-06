@@ -10,10 +10,9 @@ defmodule Absinthe.Federation.NotationTest do
       use Absinthe.Federation.Schema
 
       extend schema do
-        directive(:link,
+        directive :link,
           url: "https://specs.apollo.dev/federation/v2.0",
           import: ["@key", "@tag"]
-        )
       end
 
       import_sdl("scalar RandomNumber")
@@ -57,11 +56,10 @@ defmodule Absinthe.Federation.NotationTest do
         use Absinthe.Federation.Schema
 
         extend schema do
-          directive(:link,
+          directive :link,
             url: "https://specs.apollo.dev/federation/v2.0",
             import: ["@key", "@tag"],
             as: "federation"
-          )
         end
 
         query do
@@ -81,11 +79,10 @@ defmodule Absinthe.Federation.NotationTest do
         use Absinthe.Federation.Schema
 
         extend schema do
-          directive(:link,
+          directive :link,
             url: "https://specs.apollo.dev/federation/v2.0",
             import: ["@key", "@tag", %{"name" => "@override", "as" => "@replace"}],
             as: "federation"
-          )
         end
 
         query do
