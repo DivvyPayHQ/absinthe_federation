@@ -116,7 +116,10 @@ defmodule Absinthe.Federation.NotationTest do
         end
       end
 
-      assert Absinthe.Schema.to_sdl(MultipleLinkSchema)
+      sdl = Absinthe.Schema.to_sdl(MultipleLinkSchema)
+
+      assert sdl =~
+               ~s(schema @link(url: "https:\\/\\/myspecs.example.org\\/myDirective\\/v1.0", import: ["@myDirective"]\) @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag"]\))
     end
   end
 end
