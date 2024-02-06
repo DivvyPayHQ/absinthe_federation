@@ -134,8 +134,7 @@ defmodule MyApp.MySchema do
   use Absinthe.Federation.Schema
 
 + extend schema do
-+   directive(  
-+     :link,
++   directive(:link,
 +     url: "https://specs.apollo.dev/federation/v2.0",
 +     import: [
 +       "@key",
@@ -166,8 +165,7 @@ defmodule MyApp.MySchema do
   use Absinthe.Federation.Schema
 
 + extend schema do
-+   directive(
-+     :link,
++   directive(:link,
 +     url: "https://specs.apollo.dev/federation/v2.0", 
 +     import: [%{"name" => "@key", "as" => "@primaryKey"}], # directive renaming
 +     as: "federation" # namespacing
