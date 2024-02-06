@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1
+
+- [Make the `@link` directive repeatable](https://github.com/DivvyPayHQ/absinthe_federation/pull/89)
+
 ## 0.4.0
 
 - Feature: [Support Absinthe v1.7.2+ and Dataloader v2+](https://github.com/DivvyPayHQ/absinthe_federation/pull/87)
