@@ -95,5 +95,31 @@ defmodule Absinthe.Federation.NotationTest do
       assert sdl =~
                ~s(schema @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag", {as: "@replace", name: "@override"}], as: "federation"\))
     end
+
+    test "schema with multiple links is valid" do
+      defmodule MultipleLinkSchema do
+        use Absinthe.Schema
+        use Absinthe.Federation.Schema
+
+        extend schema do
+          directive :link,
+            url: "https://specs.apollo.dev/federation/v2.0",
+            import: ["@key", "@tag"]
+
+          directive :link,
+            url: "https://myspecs.example.org/myDirective/v1.0",
+            import: ["@myDirective"]
+        end
+
+        query do
+          field :hello, :string
+        end
+      end
+
+      sdl = Absinthe.Schema.to_sdl(MultipleLinkSchema)
+
+      assert sdl =~
+               ~s(schema @link(url: "https:\\/\\/myspecs.example.org\\/myDirective\\/v1.0", import: ["@myDirective"]\) @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag"]\))
+    end
   end
 end
