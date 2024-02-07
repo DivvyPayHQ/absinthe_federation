@@ -21,10 +21,13 @@ defmodule Absinthe.Federation.Schema do
     do_using(opts)
   end
 
-  defp do_using(_opts) do
+  defp do_using(opts) do
     quote do
       @pipeline_modifier unquote(__MODULE__)
-      @prototype_schema Absinthe.Federation.Schema.Prototype
+
+      unless unquote(opts[:skip_prototype]) do
+        @prototype_schema Absinthe.Federation.Schema.Prototype
+      end
 
       use Absinthe.Federation.Notation
       import_types Absinthe.Federation.Types
