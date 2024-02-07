@@ -61,4 +61,37 @@ defmodule Absinthe.Federation.SchemaTest do
       refute sdl =~ "_entities(representations: [_Any!]!): [_Entity]!"
     end
   end
+
+  describe "schema with custom prototype" do
+    defmodule CustomPrototype do
+      use Absinthe.Schema.Prototype
+      use Absinthe.Federation.Schema.Prototype.Directives
+
+      directive :my_directive do
+        on [:schema]
+      end
+    end
+
+    defmodule CustomPrototypeSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema, skip_prototype: true
+
+      @prototype_schema CustomPrototype
+
+      extend schema do
+        directive :link, url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]
+        directive :myDirective
+      end
+
+      query do
+        field :hello, :string
+      end
+    end
+
+    test "it includes federation and custom directions" do
+      sdl = Absinthe.Federation.to_federated_sdl(CustomPrototypeSchema)
+
+      assert sdl =~ "schema @myDirective @link"
+    end
+  end
 end

@@ -42,6 +42,31 @@ defmodule MyApp.MySchema do
 end
 ```
 
+If you are already using a schema prototype
+```elixir
+defmodule MyApp.MySchema do
+  use Absinthe.Schema
++ use Absinthe.Federation.Schema, skip_prototype: true
+
+  @prototype_schema MyApp.MySchemaPrototype
+
+  query do
+    ...
+  end
+end
+```
+
+```elixir
+defmodule MyApp.MySchemaPrototype do
+  use Absinthe.Schema.Prototype
++ use Absinthe.Federation.Schema.Prototype.Directives
+
+  directive :my_directive do
+    on [:schema]
+  end
+end
+```
+
 ## Usage
 
 ### Macro based schemas (recommended)
