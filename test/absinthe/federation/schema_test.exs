@@ -65,7 +65,7 @@ defmodule Absinthe.Federation.SchemaTest do
   describe "schema with custom prototype" do
     defmodule CustomPrototype do
       use Absinthe.Schema.Prototype
-      use Absinthe.Federation.Schema.Prototype.Directives
+      use Absinthe.Federation.Schema.Prototype.FederatedDirectives
 
       directive :my_directive do
         on [:schema]

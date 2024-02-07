@@ -1,4 +1,4 @@
-defmodule Absinthe.Federation.Schema.Prototype.Directives do
+defmodule Absinthe.Federation.Schema.Prototype.FederatedDirectives do
   @moduledoc false
 
   use Absinthe.Schema.Notation
