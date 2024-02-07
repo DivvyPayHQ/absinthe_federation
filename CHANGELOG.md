@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.2
+
+- Feature: [Support using a custom schema prototype](https://github.com/DivvyPayHQ/absinthe_federation/pull/90)
+
 ## 0.4.1
 
 - [Make the `@link` directive repeatable](https://github.com/DivvyPayHQ/absinthe_federation/pull/89)
