@@ -84,6 +84,34 @@ defmodule MyApp.MySchema do
 end
 ```
 
+### Macro based schema with existing prototype
+
+If you are already using a schema prototype
+
+```elixir
+defmodule MyApp.MySchema do
+  use Absinthe.Schema
++ use Absinthe.Federation.Schema, skip_prototype: true
+
+  @prototype_schema MyApp.MySchemaPrototype
+
+  query do
+    ...
+  end
+end
+```
+
+```elixir
+defmodule MyApp.MySchemaPrototype do
+  use Absinthe.Schema.Prototype
++ use Absinthe.Federation.Schema.Prototype.FederatedDirectives
+
+  directive :my_directive do
+    on [:schema]
+  end
+end
+```
+
 ### SDL based schemas (experimental)
 
 ```elixir
