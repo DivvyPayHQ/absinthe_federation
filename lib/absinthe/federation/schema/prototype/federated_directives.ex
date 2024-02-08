@@ -141,6 +141,19 @@ defmodule Absinthe.Federation.Schema.Prototype.FederatedDirectives do
           :input_field_definition
         ]
       end
+
+      @desc """
+      Indicates to composition that all uses of a particular custom type system directive in the subgraph schema should
+      be preserved in the supergraph schema.
+
+      See [Apollo Federation docs](https://www.apollographql.com/docs/federation/federated-types/federated-directives/#managing-custom-directives)
+      for details.
+      """
+      directive :compose_directive do
+        arg :name, non_null(:string)
+        repeatable true
+        on [:schema]
+      end
     end
   end
 end
