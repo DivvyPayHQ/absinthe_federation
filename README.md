@@ -91,9 +91,7 @@ If you are already using a schema prototype
 ```elixir
 defmodule MyApp.MySchema do
   use Absinthe.Schema
-+ use Absinthe.Federation.Schema, skip_prototype: true
-
-  @prototype_schema MyApp.MySchemaPrototype
++ use Absinthe.Federation.Schema, prototype_schema: MyApp.MySchemaPrototype
 
   query do
     ...

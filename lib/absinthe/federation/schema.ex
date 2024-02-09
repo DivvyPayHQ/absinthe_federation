@@ -14,6 +14,7 @@ defmodule Absinthe.Federation.Schema do
       end
   """
 
+  alias Absinthe.Federation.Schema.Prototype, as: FederationPrototype
   alias Absinthe.Phase.Schema.TypeImports
   alias Absinthe.Pipeline
 
@@ -22,14 +23,32 @@ defmodule Absinthe.Federation.Schema do
   end
 
   defp do_using(opts) do
+    has_custom_prototype? = Keyword.has_key?(opts, :prototype_schema)
+    prototype_schema = if has_custom_prototype?, do: opts[:prototype_schema], else: FederationPrototype
+
     quote do
       @pipeline_modifier unquote(__MODULE__)
+      use Absinthe.Federation.Notation
 
-      unless unquote(opts[:skip_prototype]) do
-        @prototype_schema Absinthe.Federation.Schema.Prototype
+      if Keyword.has_key?(unquote(opts), :skip_prototype) do
+        raise ArgumentError,
+              ":skip_prototype option is no longer supported. \n" <>
+                "Please provide your custom prototype module with the :prototype_schema option instead. \n" <>
+                "Example: `use Absinthe.Federation.Schema, prototype_schema: MySchema.Prototype`"
       end
 
-      use Absinthe.Federation.Notation
+      if unquote(has_custom_prototype?) do
+        @prototype_schema unquote(prototype_schema)
+
+        import_types unquote(prototype_schema),
+          except: unquote(Map.keys(FederationPrototype.__absinthe_types__()))
+
+        import_directives unquote(prototype_schema),
+          except: unquote(Map.keys(FederationPrototype.__absinthe_directives__()))
+      else
+        @prototype_schema FederationPrototype
+      end
+
       import_types Absinthe.Federation.Types
     end
   end

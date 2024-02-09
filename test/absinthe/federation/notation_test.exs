@@ -132,15 +132,13 @@ defmodule Absinthe.Federation.NotationTest do
         end
 
         directive :other do
-          on :schema
+          on :object
         end
       end
 
       defmodule MultipleComposeDirectivesSchema do
         use Absinthe.Schema
-        use Absinthe.Federation.Schema, skip_prototype: true
-
-        @prototype_schema ComposePrototype
+        use Absinthe.Federation.Schema, prototype_schema: ComposePrototype
 
         extend schema do
           directive :link, url: "https://specs.apollo.dev/federation/v2.1", import: ["@composeDirective"]
@@ -149,13 +147,20 @@ defmodule Absinthe.Federation.NotationTest do
         end
 
         query do
-          field :hello, :string
+          field :hello, :user
+        end
+
+        object :user do
+          directive :other
+          field :name, :string
         end
       end
 
       sdl = Absinthe.Schema.to_sdl(MultipleComposeDirectivesSchema)
 
       assert sdl =~ ~s{schema @composeDirective(name: "@other") @composeDirective(name: "@custom")}
+      assert sdl =~ ~s{directive @custom on SCHEMA}
+      assert sdl =~ ~s{directive @other on OBJECT}
     end
   end
 end

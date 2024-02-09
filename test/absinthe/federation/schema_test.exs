@@ -67,20 +67,18 @@ defmodule Absinthe.Federation.SchemaTest do
       use Absinthe.Schema.Prototype
       use Absinthe.Federation.Schema.Prototype.FederatedDirectives
 
-      directive :my_directive do
+      directive :custom do
         on [:schema]
       end
     end
 
     defmodule CustomPrototypeSchema do
       use Absinthe.Schema
-      use Absinthe.Federation.Schema, skip_prototype: true
-
-      @prototype_schema CustomPrototype
+      use Absinthe.Federation.Schema, prototype_schema: CustomPrototype
 
       extend schema do
         directive :link, url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]
-        directive :myDirective
+        directive :custom
       end
 
       query do
@@ -91,7 +89,8 @@ defmodule Absinthe.Federation.SchemaTest do
     test "it includes federation and custom directions" do
       sdl = Absinthe.Federation.to_federated_sdl(CustomPrototypeSchema)
 
-      assert sdl =~ "schema @myDirective @link"
+      assert sdl =~ "schema @custom @link"
+      assert sdl =~ "directive @custom on SCHEMA"
     end
   end
 end

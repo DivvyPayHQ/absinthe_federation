@@ -1,7 +1,4 @@
 defmodule ProductsWeb.Schema do
-  use Absinthe.Schema
-  use Absinthe.Federation.Schema
-
   defmodule Product do
     defstruct [:id, :sku, :package, :variation]
   end
@@ -26,9 +23,24 @@ defmodule ProductsWeb.Schema do
     defstruct [:email, :name, :total_products_created, :years_of_employment]
   end
 
+  defmodule Prototype do
+    use Absinthe.Schema.Prototype
+    use Absinthe.Federation.Schema.Prototype.FederatedDirectives
+
+    directive :custom do
+      on :object
+    end
+  end
+
+  use Absinthe.Schema
+  use Absinthe.Federation.Schema, prototype_schema: Prototype
+
   extend schema do
+    directive :composeDirective, name: "@custom"
+    directive :link, url: "https://divvypay.com/test/v2.4", import: ["@custom"]
+
     directive :link,
-      url: "https://specs.apollo.dev/federation/v2.0",
+      url: "https://specs.apollo.dev/federation/v2.1",
       import: [
         "@extends",
         "@external",
@@ -38,7 +50,8 @@ defmodule ProductsWeb.Schema do
         "@provides",
         "@requires",
         "@shareable",
-        "@tag"
+        "@tag",
+        "@composeDirective"
       ]
   end
 
@@ -56,6 +69,8 @@ defmodule ProductsWeb.Schema do
   """
   object :product do
     key_fields(["id", "sku package", "sku variation { id }"])
+    directive :custom
+
     field :id, non_null(:id)
     field :sku, :string
     field :package, :string
