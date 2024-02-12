@@ -130,6 +130,10 @@ defmodule Absinthe.Federation.NotationTest do
         directive :custom do
           on :schema
         end
+
+        directive :other do
+          on :schema
+        end
       end
 
       defmodule MultipleComposeDirectivesSchema do
