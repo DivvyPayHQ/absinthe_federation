@@ -122,7 +122,7 @@ defmodule Absinthe.Federation.NotationTest do
                ~s(schema @link(url: "https:\\/\\/myspecs.example.org\\/myDirective\\/v1.0", import: ["@myDirective"]\) @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag"]\))
     end
 
-    test "schema with multiple composeDirectives is valiad" do
+    test "schema with multiple composeDirectives is valid" do
       defmodule ComposePrototype do
         use Absinthe.Schema.Prototype
         use Absinthe.Federation.Schema.Prototype.FederatedDirectives
