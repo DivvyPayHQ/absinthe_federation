@@ -121,5 +121,41 @@ defmodule Absinthe.Federation.NotationTest do
       assert sdl =~
                ~s(schema @link(url: "https:\\/\\/myspecs.example.org\\/myDirective\\/v1.0", import: ["@myDirective"]\) @link(url: "https:\\/\\/specs.apollo.dev\\/federation\\/v2.0", import: ["@key", "@tag"]\))
     end
+
+    test "schema with multiple composeDirectives is valid" do
+      defmodule ComposePrototype do
+        use Absinthe.Schema.Prototype
+        use Absinthe.Federation.Schema.Prototype.FederatedDirectives
+
+        directive :custom do
+          on :schema
+        end
+
+        directive :other do
+          on :schema
+        end
+      end
+
+      defmodule MultipleComposeDirectivesSchema do
+        use Absinthe.Schema
+        use Absinthe.Federation.Schema, skip_prototype: true
+
+        @prototype_schema ComposePrototype
+
+        extend schema do
+          directive :link, url: "https://specs.apollo.dev/federation/v2.1", import: ["@composeDirective"]
+          directive :composeDirective, name: "@custom"
+          directive :composeDirective, name: "@other"
+        end
+
+        query do
+          field :hello, :string
+        end
+      end
+
+      sdl = Absinthe.Schema.to_sdl(MultipleComposeDirectivesSchema)
+
+      assert sdl =~ ~s{schema @composeDirective(name: "@other") @composeDirective(name: "@custom")}
+    end
   end
 end
