@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.5.0
+
+- Feature: [Support `@composeDirective`](https://github.com/DivvyPayHQ/absinthe_federation/pull/91)
+- Bug Fix: [Import directive definitions when a custom prototype is used](https://github.com/DivvyPayHQ/absinthe_federation/pull/92)
+- **BREAKING** (only if migrating from 0.4.2): Using a custom prototype will now
+  require using the following method:
+
+  ```elixir
+  defmodule MyApp.MySchema do
+    use Absinthe.Schema
+    use Absinthe.Federation.Schema, prototype_schema: MyApp.MySchemaPrototype
+  ```
+
+  instead of
+
+  ```elixir
+  defmodule MyApp.MySchema do
+    use Absinthe.Schema
+    use Absinthe.Federation.Schema, skip_prototype: true
+    @prototype_schema MyApp.MySchemaPrototype
+  ```
+
 ## 0.4.2
 
 - Feature: [Support using a custom schema prototype](https://github.com/DivvyPayHQ/absinthe_federation/pull/90)
