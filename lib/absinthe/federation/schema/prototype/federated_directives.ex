@@ -1,8 +1,6 @@
 defmodule Absinthe.Federation.Schema.Prototype.FederatedDirectives do
   @moduledoc false
 
-  use Absinthe.Schema.Notation
-
   defmacro __using__(_) do
     quote do
       @desc """
