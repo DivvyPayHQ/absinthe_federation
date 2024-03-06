@@ -62,6 +62,7 @@ defmodule Mix.Tasks.Absinthe.Federation.Schema.Sdl do
   defp write_schema(content, filename) do
     create_directory(Path.dirname(filename))
     create_file(filename, content, force: true)
+    :ok
   end
 
   def parse_options(argv) do
