@@ -173,7 +173,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     args = convert_keys_to_atom(representation, context)
 
     middleware
-    |> Absinthe.Middleware.unshim(schema)
+    |> maybe_unshim(schema)
     |> Enum.find(nil, &only_resolver_middleware/1)
     |> case do
       {_, resolve_ref_func} when is_function(resolve_ref_func, 2) ->
@@ -186,6 +186,11 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
         fn _, _ -> {:ok, args} end
     end
   end
+
+  defp maybe_unshim([{{Absinthe.Middleware, :shim}, {_, _, _}}] = middleware, schema),
+    do: Absinthe.Middleware.unshim(middleware, schema)
+
+  defp maybe_unshim(middleware, _schema), do: middleware
 
   defp convert_keys_to_atom(map, context) when is_map(map) do
     Map.new(map, fn {k, v} ->
