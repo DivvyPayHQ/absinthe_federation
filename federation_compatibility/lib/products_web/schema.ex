@@ -325,7 +325,7 @@ defmodule ProductsWeb.Schema do
     end
   end
 
-  defp resolve_deprecated_product_reference(%{sku: sku, package: "@apollo/federation-v1"}, _ctx) do
+  defp resolve_deprecated_product_reference(%{sku: sku}, _ctx) do
     {:ok, Enum.find(deprecated_products(), &(&1.sku == sku))}
   end
 
