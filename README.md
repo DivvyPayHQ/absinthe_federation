@@ -162,16 +162,19 @@ defmodule MyApp.MySchema do
 
 + extend schema do
 +   directive :link,
-+     url: "https://specs.apollo.dev/federation/v2.0",
++     url: "https://specs.apollo.dev/federation/v2.3",
 +     import: [
 +       "@key",
 +       "@shareable",
 +       "@provides",
++       "@requires",
 +       "@external",
 +       "@tag",
 +       "@extends",
 +       "@override",
-+       "@inaccessible"
++       "@inaccessible",
++       "@composeDirective",
++       "@interfaceObject"
 +     ]
 + end
 

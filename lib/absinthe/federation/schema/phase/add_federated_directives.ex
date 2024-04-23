@@ -33,6 +33,7 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
     |> maybe_add_shareable_directive(meta)
     |> maybe_add_override_directive(meta)
     |> maybe_add_inaccessible_directive(meta)
+    |> maybe_add_interface_object_directive(meta)
     |> maybe_add_tag_directive(meta)
   end
 
@@ -106,6 +107,14 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   end
 
   defp maybe_add_inaccessible_directive(node, _meta), do: node
+
+  defp maybe_add_interface_object_directive(node, %{interface_object: true, absinthe_adapter: adapter}) do
+    directive = Directive.build("interface_object", adapter)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_interface_object_directive(node, _meta), do: node
 
   defp maybe_add_tag_directive(node, %{tag: name, absinthe_adapter: adapter}) do
     directive = Directive.build("tag", adapter, name: name)

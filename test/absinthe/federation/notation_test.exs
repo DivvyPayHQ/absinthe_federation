@@ -162,5 +162,37 @@ defmodule Absinthe.Federation.NotationTest do
       assert sdl =~ ~s{directive @custom on SCHEMA}
       assert sdl =~ ~s{directive @other on OBJECT}
     end
+
+    test "schema with an interfaceObject is valid" do
+      defmodule InterfaceObjectSchema do
+        use Absinthe.Schema
+        use Absinthe.Federation.Schema
+
+        extend schema do
+          directive :link, url: "https://specs.apollo.dev/federation/v2.3", import: ["@interfaceObject", "@key"]
+        end
+
+        query do
+          field :hello, :media
+        end
+
+        object :media do
+          key_fields("id")
+          interface_object()
+
+          field :id, non_null(:id), do: external()
+          field :reviews, non_null(list_of(non_null(:review)))
+        end
+
+        object :review do
+          field :score, non_null(:integer)
+        end
+      end
+
+      sdl = Absinthe.Schema.to_sdl(InterfaceObjectSchema)
+
+      assert sdl =~ ~s{import: ["@interfaceObject", "@key"])}
+      assert sdl =~ ~s{type Media @interfaceObject @key(fields: "id")}
+    end
   end
 end

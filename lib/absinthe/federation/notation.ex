@@ -278,6 +278,52 @@ defmodule Absinthe.Federation.Notation do
   end
 
   @doc """
+  Adds the `@interfaceObject` directive to the field which indicates that the
+  object definition serves as an abstraction of another subgraph's entity
+  interface. This abstraction enables a subgraph to automatically contribute
+  fields to all entities that implement a particular entity interface.
+
+  During composition, the fields of every `@interfaceObject` are added both to
+  their corresponding interface definition and to all entity types that
+  implement that interface.
+
+  More information can be found on:
+  https://www.apollographql.com/docs/federation/federated-types/interfaces
+
+  ## Example
+
+      object :media do
+        key_fields("id")
+        interface_object()
+
+        field :id, non_null(:id), do: external()
+        field :reviews, non_null(list_of(non_null(:review)))
+      end
+
+      object :review do
+        field :score, non_null(:integer)
+      end
+
+
+  ## SDL Output
+
+      type Media @interfaceObject @key(fields: "id") {
+        id: ID! @external
+        reviews: [Review!]!
+      }
+
+      type Review {
+        score: Int!
+      }
+
+  """
+  defmacro interface_object() do
+    quote do
+      meta :interface_object, true
+    end
+  end
+
+  @doc """
   The `@tag` directive indicates whether to include or exclude the field/type from your contract schema.
 
   ## Example
@@ -308,6 +354,9 @@ defmodule Absinthe.Federation.Notation do
   @doc """
   The `@link` directive links definitions from an external specification to this schema.
   Every Federation 2 subgraph uses the `@link` directive to import the other federation-specific directives.
+
+  **NOTE:** If you're using Absinthe v1.7.1 or later, instead of using this macro, it's preferred to use the
+  `extend schema` method you can find in the [README](README.md#federation-v2).
 
   ## Example
 

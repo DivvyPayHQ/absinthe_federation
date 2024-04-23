@@ -119,6 +119,15 @@ defmodule Absinthe.Federation.Schema.Prototype.FederatedDirectives do
       end
 
       @desc """
+      Indicates that an object definition serves as an abstraction of another subgraph's entity interface.
+      This abstraction enables a subgraph to automatically contribute fields to all entities that implement
+      a particular entity interface.
+      """
+      directive :interface_object do
+        on [:object]
+      end
+
+      @desc """
       The `@tag` directive indicates whether to include or exclude the field/type from your contract schema.
       """
       directive :tag do
