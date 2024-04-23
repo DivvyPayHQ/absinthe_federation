@@ -40,7 +40,7 @@ defmodule ProductsWeb.Schema do
     directive :link, url: "https://divvypay.com/test/v2.4", import: ["@custom"]
 
     directive :link,
-      url: "https://specs.apollo.dev/federation/v2.1",
+      url: "https://specs.apollo.dev/federation/v2.3",
       import: [
         "@extends",
         "@external",
@@ -51,7 +51,8 @@ defmodule ProductsWeb.Schema do
         "@requires",
         "@shareable",
         "@tag",
-        "@composeDirective"
+        "@composeDirective",
+        "@interfaceObject"
       ]
   end
 
@@ -256,6 +257,23 @@ defmodule ProductsWeb.Schema do
     end
   end
 
+  @desc """
+  type Inventory @interfaceObject @key(fields: "id") {
+    id: ID! @external
+    deprecatedProducts: [DeprecatedProduct!]!
+  }
+  """
+  object :inventory do
+    key_fields("id")
+    interface_object()
+
+    field :id, non_null(:id), do: external()
+
+    field :deprecated_products, non_null(list_of(non_null(:deprecated_product))) do
+      resolve &resolve_deprecated_products_for_inventory/3
+    end
+  end
+
   defp resolve_product(_parent, %{id: id}, _ctx) do
     {:ok, Enum.find(products(), &(&1.id == id))}
   end
@@ -307,16 +325,8 @@ defmodule ProductsWeb.Schema do
     end
   end
 
-  defp resolve_deprecated_product_reference(
-         %{sku: "apollo-federation-v1", package: "@apollo/federation-v1"},
-         _ctx
-       ) do
-    {:ok,
-     %DeprecatedProduct{
-       sku: "apollo-federation-v1",
-       package: "@apollo/federation-v1",
-       reason: "Migrate to Federation V2"
-     }}
+  defp resolve_deprecated_product_reference(%{sku: sku, package: "@apollo/federation-v1"}, _ctx) do
+    {:ok, Enum.find(deprecated_products(), &(&1.sku == sku))}
   end
 
   defp resolve_deprecated_product_reference(_args, _ctx) do
@@ -337,6 +347,10 @@ defmodule ProductsWeb.Schema do
 
   defp resolve_deprecated_product(_args, _ctx) do
     {:ok, nil}
+  end
+
+  defp resolve_deprecated_products_for_inventory(%{__typename: "Inventory"} = _parent, _args, _ctx) do
+    {:ok, deprecated_products()}
   end
 
   defp resolve_deprecated_product_created_by(_deprecated_product, _args, _ctx) do
@@ -360,6 +374,15 @@ defmodule ProductsWeb.Schema do
         variation: %{
           id: "platform"
         }
+      }
+    ]
+
+  defp deprecated_products(),
+    do: [
+      %DeprecatedProduct{
+        sku: "apollo-federation-v1",
+        package: "@apollo/federation-v1",
+        reason: "Migrate to Federation V2"
       }
     ]
 
