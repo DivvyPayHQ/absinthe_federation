@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.2
+
+- Feature: [Support `@interfaceObject` directive](https://github.com/DivvyPayHQ/absinthe_federation/pull/96)
+
 ## 0.5.1
 
 - Bug Fix: [Middleware unshim exception in entities field with persistent term schema](https://github.com/DivvyPayHQ/absinthe_federation/pull/94)
