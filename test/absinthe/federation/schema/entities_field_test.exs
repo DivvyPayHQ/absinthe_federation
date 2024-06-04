@@ -63,6 +63,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
               case upc do
                 "123" -> {:ok, args}
                 "456" -> {:ok, args}
+                "nil" <> _ -> {:ok, nil}
                 _ -> {:error, "Couldn't find product with upc #{upc}"}
               end
             end)
@@ -142,6 +143,35 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
                    path: ["_entities"]
                  }
                ]
+             } = resp
+    end
+
+    test "Handles missing data" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "Product",
+              upc: "nil1"
+            },
+            {
+              __typename: "Product",
+              upc: "nil22"
+            }
+          ]) {
+            __typename
+            ...on Product {
+              upc
+              foo
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
+
+      assert %{
+               data: %{"_entities" => [nil, nil]}
              } = resp
     end
 

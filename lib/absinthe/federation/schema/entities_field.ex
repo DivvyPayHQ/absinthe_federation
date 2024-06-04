@@ -112,8 +112,14 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       resolution.arguments.representations
       |> Enum.reduce(%{errors: [], value: []}, fn r, acc ->
         case Map.get(value, r) do
-          {:error, err} -> Map.update!(acc, :errors, &[err | &1])
-          result -> Map.update!(acc, :value, &[result | &1])
+          {:error, err} ->
+            Map.update!(acc, :errors, &[err | &1])
+
+          {result, errors} ->
+            acc |> Map.update!(:value, &[result | &1]) |> Map.update!(:errors, &(errors ++ &1))
+
+          result ->
+            Map.update!(acc, :value, &[result | &1])
         end
       end)
 
@@ -242,10 +248,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     }
 
   defp reduce_resolution(%{state: :resolved} = res) do
-    case res.value do
-      nil -> {res.arguments.representation, {:error, res.errors |> List.first()}}
-      _ -> {res.arguments.representation, res.value}
-    end
+    {res.arguments.representation, {res.value, res.errors}}
   end
 
   defp reduce_resolution(%{middleware: []} = res), do: res
