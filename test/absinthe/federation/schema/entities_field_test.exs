@@ -55,6 +55,13 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       object :product do
         key_fields("upc")
         field :upc, non_null(:string)
+
+        field :name, :string,
+          resolve: fn
+            %{upc: "789-erroneous-name"}, _, _ -> {:error, "arbitrary name error"}
+            %{upc: upc}, _, _ -> {:ok, "product #{upc}"}
+          end
+
         field :foo, non_null(:string), resolve: fn _, _, _ -> {:ok, "bar"} end
 
         field :_resolve_reference, :product do
@@ -63,6 +70,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
               case upc do
                 "123" -> {:ok, args}
                 "456" -> {:ok, args}
+                "789-erroneous-name" -> {:ok, args}
                 "nil" <> _ -> {:ok, nil}
                 _ -> {:error, "Couldn't find product with upc #{upc}"}
               end
@@ -146,6 +154,43 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
              } = resp
     end
 
+    test "handles errors alongside data" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "Product",
+              upc: "789-erroneous-name"
+            },
+            {
+              __typename: "Product",
+              upc: "456"
+            }
+          ]) {
+            ...on Product {
+              upc
+              foo
+              name
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
+
+      assert %{
+               data: %{
+                 "_entities" => [
+                   %{"foo" => "bar", "name" => nil, "upc" => "789-erroneous-name"},
+                   %{"foo" => "bar", "name" => "product 456", "upc" => "456"}
+                 ]
+               },
+               errors: [
+                 %{message: "arbitrary name error", path: ["_entities", 0, "name"], locations: [%{column: 9, line: 15}]}
+               ]
+             } == resp
+    end
+
     test "Handles missing data" do
       query = """
         query {
@@ -172,6 +217,39 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
       assert %{
                data: %{"_entities" => [nil, nil]}
+             } = resp
+    end
+
+    test "Handles missing data alongside existing data" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "Product",
+              upc: "nil1"
+            },
+            {
+              __typename: "Product",
+              upc: "nil22"
+            },
+            {
+              __typename: "Product",
+              upc: "456"
+            }
+          ]) {
+            __typename
+            ...on Product {
+              upc
+              foo
+            }
+          }
+        }
+      """
+
+      {:ok, resp} = Absinthe.run(query, ResolverSchema, variables: %{})
+
+      assert %{
+               data: %{"_entities" => [nil, nil, %{"__typename" => "Product", "foo" => "bar", "upc" => "456"}]}
              } = resp
     end
 
