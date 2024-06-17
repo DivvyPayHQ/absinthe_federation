@@ -26,6 +26,7 @@ defmodule Absinthe.Federation.Schema.PersistentTermSchemaEntityFieldTest do
         resolve(fn
           _, %{name: "John"}, _ -> {:ok, %{__typename: "Person", name: "John", age: 20}}
           _, %{name: "Acme"}, _ -> {:ok, %{__typename: "Business", name: "Acme", employee_count: 10}}
+          _, %{name: "nil" <> _}, _ -> {:ok, nil}
         end)
       end
 
@@ -79,6 +80,41 @@ defmodule Absinthe.Federation.Schema.PersistentTermSchemaEntityFieldTest do
                "_entities" => [
                  %{"__typename" => "Person", "name" => "John", "age" => 20},
                  %{"__typename" => "Business", "name" => "Acme", "employeeCount" => 10}
+               ]
+             }
+           } = resp
+  end
+
+  test "Handles missing data" do
+    query = """
+      query {
+        _entities(representations: [
+          { __typename: "NamedEntity", name: "John" },
+          { __typename: "NamedEntity", name: "nilJohn" },
+          { __typename: "NamedEntity", name: "nilAcme" }
+        ]) {
+          ...on NamedEntity {
+            __typename
+            name
+            ... on Person {
+              age
+            }
+            ... on Business {
+              employeeCount
+            }
+          }
+        }
+      }
+    """
+
+    {:ok, resp} = Absinthe.run(query, EntitySchemaWithPersistentTermProvider, variables: %{})
+
+    assert %{
+             data: %{
+               "_entities" => [
+                 %{"__typename" => "Person", "name" => "John", "age" => 20},
+                 nil,
+                 nil
                ]
              }
            } = resp
