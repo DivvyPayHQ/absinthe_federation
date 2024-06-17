@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.3
+
+- Bug Fix: [Handle resolving `nil` for entity references](https://github.com/DivvyPayHQ/absinthe_federation/pull/98)
+
 ## 0.5.2
 
 - Feature: [Support `@interfaceObject` directive](https://github.com/DivvyPayHQ/absinthe_federation/pull/96)
