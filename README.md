@@ -1,219 +1,189 @@
 # Absinthe.Federation
 
 [![Build Status](https://github.com/DivvyPayHQ/absinthe_federation/workflows/CI/badge.svg)](https://github.com/DivvyPayHQ/absinthe_federation/actions?query=workflow%3ACI)
-[![Hex pm](http://img.shields.io/hexpm/v/absinthe_federation.svg)](https://hex.pm/packages/absinthe_federation)
+[![Hex pm](https://img.shields.io/hexpm/v/absinthe_federation.svg)](https://hex.pm/packages/absinthe_federation)
 [![Hex Docs](https://img.shields.io/badge/hex-docs-blue.svg)](https://hexdocs.pm/absinthe_federation/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-[Apollo Federation](https://www.apollographql.com/docs/federation/federation-spec/) support for [Absinthe](https://github.com/absinthe-graphql/absinthe)
+[Apollo Federation](https://www.apollographql.com/docs/federation) support for [Absinthe](https://hexdocs.pm/absinthe/overview.html).
 
 ## Installation
 
-Install from [Hex.pm](https://hex.pm/packages/absinthe_federation):
+Install from [Hex](https://hex.pm/packages/absinthe_federation):
 
 ```elixir
 def deps do
   [
+    {:absinthe, "~> 1.7"},
     {:absinthe_federation, "~> 0.5"}
   ]
 end
 ```
 
-Install from github:
+Install a specific branch from [GitHub](https://github.com/DivvyPayHQ/absinthe_federation):
 
 ```elixir
 def deps do
   [
+    {:absinthe, "~> 1.7"},
     {:absinthe_federation, github: "DivvyPayHQ/absinthe_federation", branch: "main"}
   ]
 end
 ```
 
-Add the following line to your absinthe schema
+Use `Absinthe.Federation.Schema` module in your root schema:
 
 ```elixir
-defmodule MyApp.MySchema do
+defmodule Example.Schema do
   use Absinthe.Schema
-+ use Absinthe.Federation.Schema
+  use Absinthe.Federation.Schema
 
   query do
-    ...
   end
 end
 ```
+
+Validate everything is wired up correctly:
+
+```bash
+mix absinthe.federation.schema.sdl --schema Example.Schema
+```
+
+You should see the [Apollo Federation Subgraph Specification](https://www.apollographql.com/docs/federation/subgraph-spec) fields along with any fields you've defined. It can be helpful to add `*.graphql` to your `.gitignore`, at least at your projects root level, while testing your SDL output during development.
 
 ## Usage
 
-### Macro based schemas (recommended)
+The following sticks close to the Apollo Federation documentation to better clarify how to achieve the same outcomes with the `Absinthe.Federation` module as you'd get from their JavaScript examples.
 
-> Note: Implementing the reference resolver with function capture does not work at the moment. Hence, the below example uses an anonymous function.
+### [Defining an entity](https://www.apollographql.com/docs/federation/entities#defining-an-entity)
 
 ```elixir
-defmodule MyApp.MySchema do
+defmodule Products.Schema do
   use Absinthe.Schema
-+ use Absinthe.Federation.Schema
+  use Absinthe.Federation.Schema
 
-  query do
-+   extends()
-
-    field :review, :review do
-      arg(:id, non_null(:id))
-      resolve(&ReviewResolver.get_review_by_id/3)
-    end
-    ...
+  extend schema do
+    directive(:link,
+      url: "https://specs.apollo.dev/federation/v2.0",
+      import: ["@key"]
+    )
   end
 
   object :product do
-+   key_fields("upc")
-+   extends()
+    directive(:key, fields: "id")
 
-    field :upc, non_null(:string) do
-+     external()
-    end
-
-    field(:reviews, list_of(:review)) do
-      resolve(&ReviewResolver.get_reviews_for_product/3)
-    end
-
-+   field(:_resolve_reference, :product) do
-+     resolve(fn parent, args, context ->
-        ProductResolver.get_product_by_upc(parent, args, context)
+    # Any subgraph contributing fields MUST defined a resolve reference.
+    field(:_resolve_reference, :product) do
+      resolve(fn %{__typename: "Product", id: id} = entity, _info ->
+        {:ok, Map.merge(entity, %{name: "ACME Anvil", price: 10000})}
       end)
-+   end
+    end
+
+    field(:id, non_null(:id))
+    field(:name, non_null(:string))
+    field(:price, :int)
   end
-end
-```
-
-### Macro based schema with existing prototype
-
-If you are already using a schema prototype
-
-```elixir
-defmodule MyApp.MySchema do
-  use Absinthe.Schema
-+ use Absinthe.Federation.Schema, prototype_schema: MyApp.MySchemaPrototype
 
   query do
-    ...
   end
 end
 ```
 
-```elixir
-defmodule MyApp.MySchemaPrototype do
-  use Absinthe.Schema.Prototype
-+ use Absinthe.Federation.Schema.Prototype.FederatedDirectives
+~~The `:_resolve_reference` version of the `resolve/1` method will receive a 2 arity function. The first argument is an entity representation and the second the `Absinthe.Resolution.t()`.~~
 
-  directive :my_directive do
-    on [:schema]
-  end
-end
+Your `:_resolve_reference` must return one of the follow:
+
+```elixir
+{:ok, %Product{id: id, ...}}
 ```
 
-### SDL based schemas (experimental)
-
 ```elixir
-defmodule MyApp.MySchema do
-  use Absinthe.Schema
-+ use Absinthe.Federation.Schema
-
-  import_sdl """
-    extend type Query {
-      review(id: ID!): Review
-    }
-
-    extend type Product @key(fields: "upc") {
-      upc: String! @external
-      reviews: [Review]
-    }
-  """
-
-  def hydrate(_, _) do
-    ...
-  end
+{:ok, %{__typename: "Product", id: id, ...}}
 ```
 
-### Resolving structs in \_entities queries
-
-If you need to resolve your struct to a specific type in your schema you can implement the `Absinthe.Federation.Schema.EntityUnion.Resolver` protocol like this:
-
 ```elixir
-defmodule MySchema do
-  @type t :: %__MODULE__{
-          id: String.t()
-        }
-
-  defstruct id: ""
-
-  defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
-    def resolve_type(_, _), do: :my_schema_object_name
-  end
-end
+{:ok, %{"__typename" => "Product", "id" => id, ...}}
 ```
 
-### Federation v2
-
-You can import Apollo Federation v2 directives by extending your top-level schema with the `@link` directive.
+### [Contributing entity fields](https://www.apollographql.com/docs/federation/entities#contributing-entity-fields)
 
 ```elixir
-defmodule MyApp.MySchema do
+defmodule Inventory.Schema do
   use Absinthe.Schema
   use Absinthe.Federation.Schema
 
-+ extend schema do
-+   directive :link,
-+     url: "https://specs.apollo.dev/federation/v2.3",
-+     import: [
-+       "@key",
-+       "@shareable",
-+       "@provides",
-+       "@requires",
-+       "@external",
-+       "@tag",
-+       "@extends",
-+       "@override",
-+       "@inaccessible",
-+       "@composeDirective",
-+       "@interfaceObject"
-+     ]
-+ end
+  extend schema do
+    directive(:link,
+      url: "https://specs.apollo.dev/federation/v2.0",
+      import: ["@key"]
+    )
+  end
+
+  object :product do
+    directive(:key, fields: "id")
+
+    # Each subgraph MUST return unique fields, see Apollo documentation for more details.
+    field :_resolve_reference, :product do
+      resolve(fn %{__typename: "Product", id: id} = entity, _info ->
+        {:ok, Map.merge(entity, %{in_stock: true})}
+      end)
+    end
+
+    field(:id, non_null(:string))
+    field(:in_stock, non_null(:boolean))
+  end
 
   query do
-    ...
   end
 end
 ```
 
-### Namespacing and directive renaming with `@link`
-
-`@link` directive supports namespacing and directive renaming (only on **Absinthe >= 1.7.2**) according to the specs.
+### [Referencing an entity without contributing fields](https://www.apollographql.com/docs/federation/entities#referencing-an-entity-without-contributing-fields)
 
 ```elixir
-defmodule MyApp.MySchema do
+defmodule Reviews.Schema do
   use Absinthe.Schema
   use Absinthe.Federation.Schema
 
-+ extend schema do
-+   directive :link,
-+     url: "https://specs.apollo.dev/federation/v2.0",
-+     import: [%{"name" => "@key", "as" => "@primaryKey"}], # directive renaming
-+     as: "federation" # namespacing
-+ end
+  extend schema do
+    directive(:link,
+      url: "https://specs.apollo.dev/federation/v2.0",
+      import: ["@key"]
+    )
+  end
+
+  # Stubbed entity, marked as unresolvable in this subgraph.
+  object :product do
+    directive(:key, fields: "id", resolvable: false)
+
+    field(:id, non_null(:string))
+  end
+
+  object :review do
+    field(:id, non_null(:id))
+    field(:score, non_null(:int))
+    field(:description, non_null(:string))
+
+    # This subgraph need only resolve the key fields used to reference the entity.
+    field(:product, non_null(:product)) do
+      resolve(fn %{product_id: id} = _parent, _args, _info ->
+        {:ok, %{id: id}}
+      end)
+    end
+  end
 
   query do
-    ...
+    field(:latest_reviews, non_null(list(:review))) do
+      resolve(fn args, info ->
+        case Reviews.find_many(args, info) do
+          {:ok, _reviews} = results ->
+            results
+
+          {:error, _reason} = error ->
+            error
+        end
+      end)
+    end
   end
 end
 ```
-
-## More Documentation
-
-See additional documentation, including guides, in the [Absinthe.Federation hexdocs](https://hexdocs.pm/absinthe_federation).
-
-## Contributing
-
-Refer to the [Contributing Guide](./CONTRIBUTING.md).
-
-## License
-
-See [LICENSE](./LICENSE.md)
