@@ -52,7 +52,7 @@ You should see the [Apollo Federation Subgraph Specification](https://www.apollo
 
 ## Usage (macro based schemas)
 
-The following sticks close to the Apollo Federation documentation to better clarify how to achieve the same outcomes with the `Absinthe.Federation` module as you'd get from their JavaScript examples. Note that implementing the reference resolver with function capture does not work at the moment. Hence, the examples below use an anonymous function.
+The following sticks close to the Apollo Federation documentation to better clarify how to achieve the same outcomes with the `Absinthe.Federation` module as you'd get from their JavaScript examples.
 
 ### [Defining an entity](https://www.apollographql.com/docs/federation/entities#defining-an-entity)
 
@@ -69,18 +69,19 @@ defmodule Products.Schema do
   end
 
   object :product do
-    directive(:key, fields: "id")
+    directive :key, fields: "id"
 
     # Any subgraph contributing fields MUST define a _resolve_reference field.
-    field(:_resolve_reference, :product) do
+    # Note that implementing the reference resolver with function capture does not work at the moment. Hence, the examples below use an anonymous function.
+    field :_resolve_reference, :product do
       resolve(fn %{__typename: "Product", id: id} = entity, _info ->
         {:ok, Map.merge(entity, %{name: "ACME Anvil", price: 10000})}
       end)
     end
 
-    field(:id, non_null(:id))
-    field(:name, non_null(:string))
-    field(:price, :int)
+    field :id, non_null(:id)
+    field :name, non_null(:string)
+    field :price, :int
   end
 
   query do
@@ -111,6 +112,8 @@ It is easier to just merge a subgraph's contributed fields back onto the incomin
 
 ### [Contributing entity fields](https://www.apollographql.com/docs/federation/entities#contributing-entity-fields)
 
+Each subgraph, by default, must return different fields. See the Apollo documentation should you need to [override this behavior](https://www.apollographql.com/docs/federation/entities/resolve-another-subgraphs-fields).
+
 ```elixir
 defmodule Inventory.Schema do
   use Absinthe.Schema
@@ -118,24 +121,23 @@ defmodule Inventory.Schema do
 
   extend schema do
     directive(:link,
-      url: "https://specs.apollo.dev/federation/v2.0",
+      url: "https://specs.apollo.dev/federation/v2.3",
       import: ["@key", ...]
     )
   end
 
   object :product do
-    directive(:key, fields: "id")
+    directive :key, fields: "id"
 
-    # Each subgraph MUST return unique fields, see Apollo documentation for more details.
-    # Contributing to an entity does not require it to be otherwise queryable in this subgraph.
+    # In this case, only the `Inventory.Schema` should resolve the `inStock` field.
     field :_resolve_reference, :product do
       resolve(fn %{__typename: "Product", id: id} = entity, _info ->
         {:ok, Map.merge(entity, %{in_stock: true})}
       end)
     end
 
-    field(:id, non_null(:string))
-    field(:in_stock, non_null(:boolean))
+    field :id, non_null(:string)
+    field :in_stock, non_null(:boolean)
   end
 
   query do
@@ -153,25 +155,25 @@ defmodule Reviews.Schema do
 
   extend schema do
     directive(:link,
-      url: "https://specs.apollo.dev/federation/v2.0",
+      url: "https://specs.apollo.dev/federation/v2.3",
       import: ["@key", ...]
     )
   end
 
   # Stubbed entity, marked as unresolvable in this subgraph.
   object :product do
-    directive(:key, fields: "id", resolvable: false)
+    directive :key, fields: "id", resolvable: false
 
-    field(:id, non_null(:string))
+    field :id, non_null(:string)
   end
 
   object :review do
-    field(:id, non_null(:id))
-    field(:score, non_null(:int))
-    field(:description, non_null(:string))
+    field :id, non_null(:id)
+    field :score, non_null(:int)
+    field :description, non_null(:string)
 
     # This subgraph only needs to resolve the key fields used to reference the entity.
-    field(:product, non_null(:product)) do
+    field :product, non_null(:product) do
       resolve(fn %{product_id: id} = _parent, _args, _info ->
         {:ok, %{id: id}}
       end)
@@ -179,16 +181,8 @@ defmodule Reviews.Schema do
   end
 
   query do
-    field(:latest_reviews, non_null(list(:review))) do
-      resolve(fn args, info ->
-        case Reviews.find_many(args, info) do
-          {:ok, _reviews} = results ->
-            results
-
-          {:error, _reason} = error ->
-            error
-        end
-      end)
+    field :latest_reviews, non_null(list(:review)) do
+      resolve(&ReviewsResolver.find_many/2)
     end
   end
 end
@@ -306,7 +300,7 @@ defmodule Example.Schema do
 
 + extend schema do
 +   directive :link,
-+     url: "https://specs.apollo.dev/federation/v2.0",
++     url: "https://specs.apollo.dev/federation/v2.3",
 +     import: [%{"name" => "@key", "as" => "@primaryKey"}], # directive renaming
 +     as: "federation" # namespacing
 + end
