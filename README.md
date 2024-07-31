@@ -90,7 +90,7 @@ defmodule Products.Schema do
 end
 ```
 
-Your `:_resolve_reference` must return one of the follow:
+Your `:_resolve_reference` must return one of the following:
 
 ```elixir
 {:ok, %Product{id: id, ...}}
