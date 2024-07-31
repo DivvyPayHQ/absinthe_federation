@@ -328,7 +328,3 @@ Refer to the [Contributing Guide](./CONTRIBUTING.md).
 ## License
 
 See [LICENSE](./LICENSE.md)
-
-```
-
-```
