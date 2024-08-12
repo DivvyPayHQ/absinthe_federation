@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.4
+
+- Bug Fix: [Fix `@link` directive arguments](https://github.com/DivvyPayHQ/absinthe_federation/pull/101)
+
 ## 0.5.3
 
 - Bug Fix: [Handle resolving `nil` for entity references](https://github.com/DivvyPayHQ/absinthe_federation/pull/98)
