@@ -73,7 +73,7 @@ defmodule Absinthe.Federation.Schema.Prototype.FederatedDirectives do
         arg :url, :string
         arg :as, :string
         arg :for, :link_purpose
-        arg :import, :link_import
+        arg :import, list_of(:link_import)
         repeatable true
         on [:schema]
       end
