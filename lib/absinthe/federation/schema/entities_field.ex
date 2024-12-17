@@ -83,71 +83,141 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
   end
 
   def call(%{state: :unresolved} = resolution, _args) do
-    resolutions = resolver(resolution.source, resolution.arguments, resolution)
+    resolution_acc = resolution_accumulator(resolution)
 
-    resolvers =
-      resolutions
-      |> Enum.group_by(fn %{middleware: [middleware | _remaining_middleware]} = r ->
-        case middleware do
-          {Absinthe.Middleware.Dataloader, {loader, _fun}} ->
-            {source, _} = find_relevant_dataloader(loader)
-            {:dataloader, source}
+    # Run pre-resolution plugins, such as async/batch and dataloader.
+    resolution_acc = run_callbacks(resolution_acc.schema.plugins(), :before_resolution, resolution_acc)
 
-          _ ->
-            {:resolver, r}
-        end
+    representations_to_resolve =
+      Enum.map(resolution.arguments.representations, &resolve_reference_field(&1, resolution_acc, resolution))
+
+    # Resolve representations first time
+    resolution_acc = Enum.reduce(representations_to_resolve, resolution_acc, &resolve_representation/2)
+
+    # If any representation fields are suspended (i.e async or dataloaded),
+    # run the plugins and resolve_representation pipeline again.
+    resolution_acc =
+      if Enum.any?(resolution_acc.path, &(&1.state == :suspended)) do
+        representations_to_resolve = resolution_acc.path
+
+        resolution_acc =
+          run_callbacks(resolution_acc.schema.plugins(), :before_resolution, resolution_acc)
+          |> Map.put(:path, [])
+
+        Enum.reduce(representations_to_resolve, resolution_acc, &resolve_representation/2)
+      else
+        resolution_acc
+      end
+
+    # Run post-resolution plugins
+    resolution_acc = run_callbacks(resolution_acc.schema.plugins(), :after_resolution, resolution_acc)
+    representations = resolution_acc.path
+
+    # Collect values and errors
+    resolution_acc =
+      Enum.reduce(representations, resolution_acc, fn representation, acc ->
+        representation_errors = representation.errors
+        representation_value = representation.value
+
+        acc
+        |> Map.update!(:value, fn value -> [representation_value | value] end)
+        |> Map.update!(:errors, fn errors -> representation_errors ++ errors end)
       end)
-      |> Enum.flat_map(fn
-        {{:dataloader, _}, v} = _resolvers -> Enum.take(v, 1)
-        {{:resolver, _}, v} = _resolvers -> v
-      end)
+      |> then(&reverse_values_and_errors/1)
+      |> then(&set_final_state/1)
 
-    value =
-      resolvers
-      |> Enum.map(&reduce_resolution/1)
-      |> List.flatten()
-      |> Map.new()
-
-    res =
-      resolution.arguments.representations
-      |> Enum.reduce(%{errors: [], value: []}, fn r, acc ->
-        case Map.get(value, r) do
-          {:error, err} ->
-            Map.update!(acc, :errors, &[err | &1])
-
-          {result, errors} ->
-            acc |> Map.update!(:value, &[result | &1]) |> Map.update!(:errors, &(errors ++ &1))
-
-          result ->
-            Map.update!(acc, :value, &[result | &1])
-        end
-      end)
-
-    %{
-      resolution
-      | state: :resolved,
-        errors: Enum.reverse(res[:errors]),
-        value: Enum.reverse(res[:value])
-    }
+    %{resolution | state: resolution_acc.state, value: resolution_acc.value, errors: resolution_acc.errors}
   end
 
-  def call(res, _args), do: res
-
-  def resolver(parent, %{representations: representations}, resolution) do
-    Enum.map(representations, &entity_accumulator(&1, parent, resolution))
+  defp reverse_values_and_errors(res) do
+    res
+    |> Map.update!(:value, &Enum.reverse/1)
+    |> Map.update!(:errors, &Enum.reverse/1)
   end
 
-  defp entity_accumulator(representation, parent, %{schema: schema} = resolution) do
+  defp set_final_state(res) do
+    if Enum.all?(res.path, &(&1.state == :resolved)) do
+      Map.put(res, :state, :resolved)
+    else
+      paths = Enum.map(res.path, &%{state: &1.state, value: &1.value, errors: &1.errors})
+      raise "Expected all fields to be resolved, but got: #{paths}"
+    end
+  end
+
+  # These are the fields to be threaded through every single representation resolution.
+  defp resolution_accumulator(resolution) do
+    resolution
+    |> Map.take([:context, :state, :acc, :fields_cache, :schema, :source])
+    |> Map.put(:path, [])
+    |> Map.put(:errors, [])
+    |> Map.put(:value, [])
+  end
+
+  # Resolve a single representation and accumulate it to field resolution
+  # under path key. If a field is already resolved, do not run any middlewares.
+  defp resolve_representation(representation, acc) do
+    if representation.state == :resolved do
+      new_path = acc.path ++ [representation]
+
+      acc
+      |> Map.put(:path, new_path)
+    else
+      local_res =
+        representation
+        |> Map.put(:context, acc.context)
+        |> Map.put(:value, nil)
+        |> Map.put(:errors, [])
+        |> Map.put(:acc, acc.acc)
+
+      result = reduce_resolution(local_res)
+      new_path = acc.path ++ [result]
+
+      acc
+      |> Map.put(:context, result.context)
+      |> Map.put(:acc, result.acc)
+      |> Map.put(:path, new_path)
+    end
+  end
+
+  defp resolve_reference_field(representation, persisted_fields, resolution) do
     typename = Map.get(representation, "__typename")
+    %{schema: schema, source: source} = persisted_fields
 
-    fun =
-      schema
-      |> Absinthe.Schema.lookup_type(typename)
-      |> resolve_representation(parent, representation, resolution)
+    schema
+    |> Absinthe.Schema.lookup_type(typename)
+    |> resolve_representation(source, representation, resolution)
+    |> Map.put(:schema, schema)
+    |> Map.put(:source, source)
+    |> Map.put(:state, resolution.state)
+    |> Map.put(:value, nil)
+  end
 
-    resolution = Map.put(resolution, :arguments, Map.put(resolution.arguments, :representation, representation))
+  defp run_callbacks(plugins, callback, acc) do
+    Enum.reduce(plugins, acc, &apply(&1, callback, [&2]))
+  end
 
-    Absinthe.Resolution.call(resolution, fun)
+  defp reduce_resolution(%{middleware: []} = res), do: res
+
+  defp reduce_resolution(%{middleware: [middleware | remaining_middleware]} = res) do
+    case call_middleware(middleware, %{res | middleware: remaining_middleware}) do
+      %{state: :suspended} = res ->
+        res
+
+      res ->
+        reduce_resolution(res)
+    end
+  end
+
+  defp call_middleware({{mod, fun}, opts}, res) do
+    apply(mod, fun, [res, opts])
+  end
+
+  defp call_middleware({mod, opts}, res) do
+    apply(mod, :call, [res, opts])
+  end
+
+  defp call_middleware(fun, res) when is_function(fun, 2) do
+    fun.(res, [])
   end
 
   defp resolve_representation(
@@ -156,47 +226,32 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
          representation,
          resolution
        )
-       when struct_type in [Absinthe.Type.Object, Absinthe.Type.Interface],
-       do: resolve_reference(fields[:_resolve_reference], parent, representation, resolution)
+       when struct_type in [Absinthe.Type.Object, Absinthe.Type.Interface] do
+    resolve_reference(fields[:_resolve_reference], parent, representation, resolution)
+  end
 
   defp resolve_representation(_schema_type, _parent, representation, _schema),
     do:
       {:error,
        "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
 
-  defp resolve_reference(nil, _parent, representation, %{context: context} = _resolution) do
+  # When there is no field name _resolve_reference defined on the key object, create
+  # a stub middleware that returns arguments as the field resolution.
+  defp resolve_reference(nil, parent, representation, %{context: context} = _resolution) do
     args = convert_keys_to_atom(representation, context)
-
-    fn _, _ -> {:ok, args} end
+    middleware = {{Absinthe.Resolution, :call}, fn args, _res -> {:ok, args} end}
+    %{arguments: args, value: nil, middleware: [middleware], parent: parent, errors: [], state: :unresolved}
   end
 
-  defp resolve_reference(
-         %{middleware: middleware},
-         parent,
-         representation,
-         %{schema: schema, context: context} = resolution
-       ) do
+  # When there is a field _resolve_reference, set it up so the resolution pipeline can be run
+  # on it.
+  defp resolve_reference(%{middleware: _middleware} = field, parent, representation, %{context: context}) do
     args = convert_keys_to_atom(representation, context)
 
-    middleware
-    |> maybe_unshim(schema)
-    |> Enum.find(nil, &only_resolver_middleware/1)
-    |> case do
-      {_, resolve_ref_func} when is_function(resolve_ref_func, 2) ->
-        fn _, _ -> resolve_ref_func.(args, resolution) end
-
-      {_, resolve_ref_func} when is_function(resolve_ref_func, 3) ->
-        fn _, _ -> resolve_ref_func.(parent, args, resolution) end
-
-      _ ->
-        fn _, _ -> {:ok, args} end
-    end
+    field
+    |> Map.put(:arguments, args)
+    |> Map.put(:parent, parent)
   end
-
-  defp maybe_unshim([{{Absinthe.Middleware, :shim}, {_, _, _}}] = middleware, schema),
-    do: Absinthe.Middleware.unshim(middleware, schema)
-
-  defp maybe_unshim(middleware, _schema), do: middleware
 
   defp convert_keys_to_atom(map, context) when is_map(map) do
     Map.new(map, fn {k, v} ->
@@ -223,10 +278,6 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     Keyword.get(adapter.__info__(:functions), :to_internal_name) == 2
   end
 
-  defp only_resolver_middleware({{Absinthe.Resolution, :call}, _}), do: true
-
-  defp only_resolver_middleware(_), do: false
-
   defp build_arguments(), do: [build_argument()]
 
   defp build_argument(),
@@ -246,68 +297,4 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
         }
       }
     }
-
-  defp reduce_resolution(%{state: :resolved} = res) do
-    {res.arguments.representation, {res.value, res.errors}}
-  end
-
-  defp reduce_resolution(%{middleware: []} = res), do: res
-
-  defp reduce_resolution(%{middleware: [middleware | remaining_middleware]} = res) do
-    call_middleware(middleware, %{res | middleware: remaining_middleware})
-  end
-
-  defp call_middleware({Absinthe.Middleware.Dataloader, {loader, _fun}}, %{
-         arguments: %{representations: args},
-         schema: schema
-       }) do
-    {source, typename} = find_relevant_dataloader(loader)
-
-    key_field =
-      Absinthe.Schema.lookup_type(schema, typename)
-      |> Absinthe.Type.meta()
-      |> Map.get(:key_fields, "id")
-
-    representations =
-      args
-      |> Enum.reject(fn arg ->
-        Map.get(arg, "__typename") != typename
-      end)
-
-    ids =
-      representations
-      |> Enum.map(fn arg -> Map.get(arg, key_field) end)
-
-    loader
-    |> Dataloader.load_many(source, %{__typename: typename}, ids)
-    |> Dataloader.run()
-    |> Dataloader.get_many(source, %{__typename: typename}, ids)
-    |> Enum.zip(representations)
-    |> Enum.map(fn {res, arg} ->
-      case res do
-        {:ok, data} -> {arg, data}
-        {:error, _} = e -> {arg, e}
-        data -> {arg, data}
-      end
-    end)
-  end
-
-  defp call_middleware({_mod, {fun, args}}, resolution) do
-    with {:ok, res} <- fun.(args) do
-      {resolution.arguments.representation, res}
-    else
-      err -> {resolution.arguments.representation, err}
-    end
-  end
-
-  defp find_relevant_dataloader(%Dataloader{sources: sources}) do
-    {source, loader} =
-      Enum.find(sources, fn {_, source} ->
-        Dataloader.Source.pending_batches?(source)
-      end)
-
-    %{batches: batches} = loader
-    {{:_entities, %{__typename: typename}}, _} = Enum.at(batches, 0)
-    {source, typename}
-  end
 end

@@ -66,7 +66,12 @@ defmodule Absinthe.Federation.MixProject do
       {:dataloader, "~> 1.0.9 or ~> 1.0.10 or ~> 2.0"},
       # Dev
       {:dialyxir, ">= 1.0.0", only: [:dev, :test], runtime: false},
-      {:ex_doc, "~> 0.29", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.29", only: :dev, runtime: false},
+
+      # Ecto Dataloader tests
+      {:ecto, "~> 3.8", only: [:dev, :test], optional: true},
+      {:ecto_sql, "~> 3.8", only: [:dev, :test], optional: true},
+      {:postgrex, ">= 0.0.0", only: [:dev, :test], optional: true}
     ]
   end
 end

@@ -66,7 +66,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
 
         field :_resolve_reference, :product do
           resolve(fn _, %{upc: upc} = args, _ ->
-            async(fn _ ->
+            async(fn ->
               case upc do
                 "123" -> {:ok, args}
                 "456" -> {:ok, args}
@@ -285,7 +285,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
-      import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+      import Absinthe.Resolution.Helpers, only: [dataloader: 2]
 
       def context(ctx) do
         loader =
@@ -312,9 +312,9 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
         field :item_id, :string
 
         field :_resolve_reference, :spec_item do
-          resolve(fn _root, %{item_id: id} = args, info ->
-            dataloader(SpecItem.Loader).(id, args, info)
-          end)
+          resolve dataloader(SpecItem.Loader, fn _parent, args, _res ->
+                    %{batch: {{:one, SpecItem}, %{}}, item: args.item_id}
+                  end)
         end
       end
     end
