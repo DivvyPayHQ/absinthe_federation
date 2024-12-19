@@ -89,7 +89,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     resolution_acc = run_callbacks(resolution_acc.schema.plugins(), :before_resolution, resolution_acc)
 
     representations_to_resolve =
-      Enum.map(resolution.arguments.representations, &resolve_reference_field(&1, resolution_acc, resolution))
+      Enum.map(resolution.arguments.representations, &resolve_reference_field(&1, resolution_acc))
 
     # Resolve representations first time
     resolution_acc = Enum.reduce(representations_to_resolve, resolution_acc, &resolve_representation/2)
@@ -165,8 +165,6 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       local_res =
         representation
         |> Map.put(:context, acc.context)
-        |> Map.put(:value, nil)
-        |> Map.put(:errors, [])
         |> Map.put(:acc, acc.acc)
 
       result = reduce_resolution(local_res)
@@ -179,17 +177,67 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     end
   end
 
-  defp resolve_reference_field(representation, persisted_fields, resolution) do
+  defp resolve_reference_field(representation, resolution_acc) do
     typename = Map.get(representation, "__typename")
-    %{schema: schema, source: source} = persisted_fields
+    %{schema: schema, source: source, context: context} = resolution_acc
+    args = convert_keys_to_atom(representation, context)
 
-    schema
-    |> Absinthe.Schema.lookup_type(typename)
-    |> resolve_representation(source, representation, resolution)
+    field =
+      schema
+      |> Absinthe.Schema.lookup_type(typename)
+      |> resolve_representation(source, representation)
+
+    field
+    |> Map.put(:arguments, args)
     |> Map.put(:schema, schema)
     |> Map.put(:source, source)
-    |> Map.put(:state, resolution.state)
+    |> Map.put(:state, :unresolved)
     |> Map.put(:value, nil)
+    |> Map.put(:errors, [])
+  end
+
+  defp resolve_representation(%struct_type{fields: fields}, parent, _representation)
+       when struct_type in [Absinthe.Type.Object, Absinthe.Type.Interface] do
+    resolve_reference(fields[:_resolve_reference], parent)
+  end
+
+  defp resolve_representation(_schema_type, _parent, representation),
+    do:
+      {:error,
+       "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
+
+  defp resolve_reference(field, parent) do
+    # When there is a field _resolve_reference, set it up so the resolution pipeline can be run
+    # on it.
+    if field do
+      Map.put(field, :parent, parent)
+    else
+      # When there is no field name _resolve_reference defined on the key object, create
+      # a stub middleware that returns arguments as the field resolution.
+      middleware = {{Absinthe.Resolution, :call}, fn args, _res -> {:ok, args} end}
+      %{middleware: [middleware], parent: parent}
+    end
+  end
+
+  defp convert_keys_to_atom(map, context) when is_map(map) do
+    Map.new(map, fn {k, v} ->
+      k = convert_key(k, context)
+      v = convert_keys_to_atom(v, context)
+      {k, v}
+    end)
+  end
+
+  defp convert_keys_to_atom(v, _context), do: v
+
+  defp convert_key(k, context) do
+    adapter = Map.get(context, :adapter, LanguageConventions)
+
+    if adapter_has_to_internal_name_modifier?(adapter) do
+      adapter.to_internal_name(k, :field)
+    else
+      k
+    end
+    |> String.to_atom()
   end
 
   defp run_callbacks(plugins, callback, acc) do
@@ -218,60 +266,6 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
 
   defp call_middleware(fun, res) when is_function(fun, 2) do
     fun.(res, [])
-  end
-
-  defp resolve_representation(
-         %struct_type{fields: fields},
-         parent,
-         representation,
-         resolution
-       )
-       when struct_type in [Absinthe.Type.Object, Absinthe.Type.Interface] do
-    resolve_reference(fields[:_resolve_reference], parent, representation, resolution)
-  end
-
-  defp resolve_representation(_schema_type, _parent, representation, _schema),
-    do:
-      {:error,
-       "The _entities resolver tried to load an entity for type '#{Map.get(representation, "__typename")}', but no object type of that name was found in the schema"}
-
-  # When there is no field name _resolve_reference defined on the key object, create
-  # a stub middleware that returns arguments as the field resolution.
-  defp resolve_reference(nil, parent, representation, %{context: context} = _resolution) do
-    args = convert_keys_to_atom(representation, context)
-    middleware = {{Absinthe.Resolution, :call}, fn args, _res -> {:ok, args} end}
-    %{arguments: args, value: nil, middleware: [middleware], parent: parent, errors: [], state: :unresolved}
-  end
-
-  # When there is a field _resolve_reference, set it up so the resolution pipeline can be run
-  # on it.
-  defp resolve_reference(%{middleware: _middleware} = field, parent, representation, %{context: context}) do
-    args = convert_keys_to_atom(representation, context)
-
-    field
-    |> Map.put(:arguments, args)
-    |> Map.put(:parent, parent)
-  end
-
-  defp convert_keys_to_atom(map, context) when is_map(map) do
-    Map.new(map, fn {k, v} ->
-      k = convert_key(k, context)
-      v = convert_keys_to_atom(v, context)
-      {k, v}
-    end)
-  end
-
-  defp convert_keys_to_atom(v, _context), do: v
-
-  defp convert_key(k, context) do
-    adapter = Map.get(context, :adapter, LanguageConventions)
-
-    if adapter_has_to_internal_name_modifier?(adapter) do
-      adapter.to_internal_name(k, :field)
-    else
-      k
-    end
-    |> String.to_atom()
   end
 
   defp adapter_has_to_internal_name_modifier?(adapter) do

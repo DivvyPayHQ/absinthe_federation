@@ -2,7 +2,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
   use Absinthe.Federation.Case, async: true
 
   describe "resolve a function capture" do
-    defmodule EctoDataloaderSchema do
+    defmodule FunctionCaptureSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -53,7 +53,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
       """
 
       assert {:ok, %{data: %{"_entities" => [%{"item_id" => "11"}]}}} =
-               Absinthe.run(query, EctoDataloaderSchema, variables: %{})
+               Absinthe.run(query, FunctionCaptureSchema, variables: %{})
     end
 
     test "handles a function capture" do
@@ -73,7 +73,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
       """
 
       assert {:ok, %{data: %{"_entities" => [%{"item_id" => "1"}]}}} =
-               Absinthe.run(query, EctoDataloaderSchema, variables: %{})
+               Absinthe.run(query, FunctionCaptureSchema, variables: %{})
     end
   end
 end

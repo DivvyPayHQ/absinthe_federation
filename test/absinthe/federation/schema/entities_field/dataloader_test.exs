@@ -1,21 +1,18 @@
 defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
   use Absinthe.Federation.Case, async: true
 
+  # setup do
+  # end
+
   setup do
-    {:ok, repo} = start_supervised(ExampleRepo)
+    {:ok, source} = start_supervised(Example.Source)
+    Example.Source.put(%{"1" => %ExampleItem{item_id: "1"}, "3" => %ExampleItem{item_id: "3"}})
 
-    pid = Ecto.Adapters.SQL.Sandbox.start_owner!(ExampleRepo, shared: false)
-    on_exit(fn -> Ecto.Adapters.SQL.Sandbox.stop_owner(pid) end)
-
-    example_item =
-      %ExampleItem{item_id: "1"}
-      |> ExampleRepo.insert!()
-
-    %{repo: repo, example_item: example_item}
+    %{source: source}
   end
 
   describe "resolver with dataloader" do
-    defmodule EctoDataloaderSchema do
+    defmodule ExampleDataloaderSchema do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
@@ -24,7 +21,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
       def context(ctx) do
         loader =
           Dataloader.new()
-          |> Dataloader.add_source(EctoDataloaderSchema, Dataloader.Ecto.new(ExampleRepo))
+          |> Dataloader.add_source(Example.Source, Dataloader.KV.new(&Example.Source.run_batch/2))
 
         Map.put(ctx, :loader, loader)
       end
@@ -53,8 +50,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
 
         field :_resolve_reference, :dataloaded_item do
           resolve dataloader(
-                    EctoDataloaderSchema,
-                    fn _parent, args, _res -> %{batch: {:one, ExampleItem, %{}}, item: [item_id: args.item_id]} end,
+                    Example.Source,
+                    fn _parent, args, _res -> %{batch: {:one, ExampleItem, %{}}, item: args.item_id} end,
                     callback: fn item, _parent, _args ->
                       if item do
                         item = Map.drop(item, [:__struct__])
@@ -75,12 +72,12 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
         field :_resolve_reference, :on_load_item do
           resolve fn %{item_id: id}, %{context: %{loader: loader}} ->
             batch_key = {:one, ExampleItem, %{}}
-            item_key = [item_id: id]
+            item_key = id
 
             loader
-            |> Dataloader.load(EctoDataloaderSchema, batch_key, item_key)
+            |> Dataloader.load(Example.Source, batch_key, item_key)
             |> on_load(fn loader ->
-              result = Dataloader.get(loader, EctoDataloaderSchema, batch_key, item_key)
+              result = Dataloader.get(loader, Example.Source, batch_key, item_key)
 
               if result do
                 result = Map.drop(result, [:__struct__])
@@ -109,6 +106,10 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
             {
               __typename: "OnLoadItem",
               item_id: "1"
+            },
+            {
+              __typename: "OnLoadItem",
+              item_id: "2"
             }
           ]) {
             ...on DataloadedItem {
@@ -124,8 +125,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
         }
       """
 
-      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "1"}, %{"item_id" => "1"}, %{"item_id" => "1"}]}}} =
-               Absinthe.run(query, EctoDataloaderSchema, variables: %{})
+      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "1"}, %{"item_id" => "1"}, %{"item_id" => "1"}, nil]}}} =
+               Absinthe.run(query, ExampleDataloaderSchema, variables: %{})
     end
   end
 end
