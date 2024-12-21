@@ -13,7 +13,7 @@ defmodule Example.Source do
     Agent.update(__MODULE__, fn _ -> value end)
   end
 
-  def run_batch({:one, ExampleItem, %{}}, items) do
+  def run_batch({:one, Example.Item, %{}}, items) do
     value = Agent.get(__MODULE__, & &1)
 
     for item <- items, into: %{} do

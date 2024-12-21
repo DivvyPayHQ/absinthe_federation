@@ -1,3 +1,3 @@
-defmodule ExampleItem do
+defmodule Example.Item do
   defstruct [:item_id]
 end

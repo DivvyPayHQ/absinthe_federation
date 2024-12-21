@@ -9,24 +9,43 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
       query do
       end
 
-      object :item_with_middleware do
+      @impl Absinthe.Schema
+      def middleware(middleware, _field, %{identifier: :item_with_module_middleware}) do
+        middleware ++ [Example.Middleware]
+      end
+
+      def middleware(middleware, _field, _object) do
+        middleware
+      end
+
+      object :item_with_module_middleware do
         key_fields("item_id")
         field :item_id, :string
 
-        field :_resolve_reference, :item do
+        field :_resolve_reference, :item_with_module_middleware do
+          resolve fn args, _res -> {:ok, args} end
+        end
+      end
+
+      object :item_with_function_middleware do
+        key_fields("item_id")
+        field :item_id, :string
+
+        field :_resolve_reference, :item_with_function_middleware do
           resolve &__MODULE__.get_item/2
+
           middleware fn res, _ ->
-            value = Map.update!(res.value, :item_id, & "#{&1}#{&1}")
+            value = Map.update!(res.value, :item_id, &"FunctionMiddleware:#{&1}")
             Map.put(res, :value, value)
           end
         end
       end
 
-      object :item do
+      object :item_with_function_capture do
         key_fields("item_id")
         field :item_id, :string
 
-        field :_resolve_reference, :item do
+        field :_resolve_reference, :item_with_function_capture do
           resolve &__MODULE__.get_item/2
         end
       end
@@ -41,18 +60,38 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
         query {
           _entities(representations: [
             {
-              __typename: "ItemWithMiddleware",
+              __typename: "ItemWithFunctionMiddleware",
               item_id: "1"
             }
           ]) {
-            ...on ItemWithMiddleware {
+            ...on ItemWithFunctionMiddleware {
               item_id
             }
           }
         }
       """
 
-      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "11"}]}}} =
+      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "FunctionMiddleware:1"}]}}} =
+               Absinthe.run(query, FunctionCaptureSchema, variables: %{})
+    end
+
+    test "handles a module-based middleware" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "ItemWithModuleMiddleware",
+              item_id: "1"
+            }
+          ]) {
+            ...on ItemWithModuleMiddleware {
+              item_id
+            }
+          }
+        }
+      """
+
+      assert {:ok, %{data: %{"_entities" => [%{"item_id" => "ModuleMiddleware:1"}]}}} =
                Absinthe.run(query, FunctionCaptureSchema, variables: %{})
     end
 
@@ -61,11 +100,11 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
         query {
           _entities(representations: [
             {
-              __typename: "Item",
+              __typename: "ItemWithFunctionCapture",
               item_id: "1"
             }
           ]) {
-            ...on Item {
+            ...on ItemWithFunctionCapture {
               item_id
             }
           }

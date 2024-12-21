@@ -6,7 +6,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
 
   setup do
     {:ok, source} = start_supervised(Example.Source)
-    Example.Source.put(%{"1" => %ExampleItem{item_id: "1"}, "3" => %ExampleItem{item_id: "3"}})
+    Example.Source.put(%{"1" => %Example.Item{item_id: "1"}, "3" => %Example.Item{item_id: "3"}})
 
     %{source: source}
   end
@@ -51,7 +51,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
         field :_resolve_reference, :dataloaded_item do
           resolve dataloader(
                     Example.Source,
-                    fn _parent, args, _res -> %{batch: {:one, ExampleItem, %{}}, item: args.item_id} end,
+                    fn _parent, args, _res -> %{batch: {:one, Example.Item, %{}}, item: args.item_id} end,
                     callback: fn item, _parent, _args ->
                       if item do
                         item = Map.drop(item, [:__struct__])
@@ -71,7 +71,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
 
         field :_resolve_reference, :on_load_item do
           resolve fn %{item_id: id}, %{context: %{loader: loader}} ->
-            batch_key = {:one, ExampleItem, %{}}
+            batch_key = {:one, Example.Item, %{}}
             item_key = id
 
             loader

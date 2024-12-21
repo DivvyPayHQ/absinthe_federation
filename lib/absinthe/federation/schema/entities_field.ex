@@ -264,6 +264,10 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     apply(mod, :call, [res, opts])
   end
 
+  defp call_middleware(mod, res) when is_atom(mod) do
+    apply(mod, :call, [res, []])
+  end
+
   defp call_middleware(fun, res) when is_function(fun, 2) do
     fun.(res, [])
   end
