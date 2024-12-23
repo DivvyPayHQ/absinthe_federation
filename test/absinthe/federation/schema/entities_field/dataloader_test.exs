@@ -1,9 +1,6 @@
 defmodule Absinthe.Federation.Schema.EntitiesField.DataloaderTest do
   use Absinthe.Federation.Case, async: true
 
-  # setup do
-  # end
-
   setup do
     {:ok, source} = start_supervised(Example.Source)
     Example.Source.put(%{"1" => %Example.Item{item_id: "1"}, "3" => %Example.Item{item_id: "3"}})

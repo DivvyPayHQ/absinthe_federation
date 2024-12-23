@@ -1,4 +1,4 @@
-defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
+defmodule Absinthe.Federation.Schema.EntitiesField.MiddlewareTest do
   use Absinthe.Federation.Case, async: true
 
   describe "resolve a function capture" do
@@ -22,9 +22,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField.FunctionCaptureTest do
         key_fields("item_id")
         field :item_id, :string
 
-        field :_resolve_reference, :item_with_module_middleware do
-          resolve fn args, _res -> {:ok, args} end
-        end
+        field :_resolve_reference, :item_with_module_middleware
       end
 
       object :item_with_function_middleware do
