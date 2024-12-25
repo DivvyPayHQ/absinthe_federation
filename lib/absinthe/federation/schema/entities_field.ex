@@ -175,7 +175,16 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
 
   defp resolve_reference_field(representation, resolution_acc) do
     typename = Map.get(representation, "__typename")
-    %{schema: schema, source: source, context: context, adapter: adapter} = resolution_acc
+
+    %Absinthe.Resolution{
+      schema: schema,
+      source: source,
+      context: context,
+      adapter: adapter,
+      definition: definition,
+      parent_type: parent_type
+    } = resolution_acc
+
     args = convert_keys_to_atom(representation, context)
 
     field =
@@ -186,6 +195,8 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     %Absinthe.Resolution{
       arguments: args,
       schema: schema,
+      definition: definition,
+      parent_type: parent_type,
       source: source,
       state: :unresolved,
       value: nil,
