@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.0
+
+- [Rework how entities field is resolved](https://github.com/DivvyPayHQ/absinthe_federation/pull/104):
+  - Support async resolution with 0-arity function
+  - Support Dataloader.Ecto
+  - Support function capture in `_resolve_reference`
+
 ## 0.5.4
 
 - Bug Fix: [Fix `@link` directive arguments](https://github.com/DivvyPayHQ/absinthe_federation/pull/101)
