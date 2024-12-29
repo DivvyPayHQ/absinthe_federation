@@ -72,11 +72,8 @@ defmodule Products.Schema do
     directive :key, fields: "id"
 
     # Any subgraph contributing fields MUST define a _resolve_reference field.
-    # Note that implementing the reference resolver with function capture does not work at the moment. Hence, the examples below use an anonymous function.
     field :_resolve_reference, :product do
-      resolve(fn %{__typename: "Product", id: id} = entity, _info ->
-        {:ok, Map.merge(entity, %{name: "ACME Anvil", price: 10000})}
-      end)
+      resolve &Products.find_by_id/2
     end
 
     field :id, non_null(:id)
@@ -234,6 +231,60 @@ defmodule Example.Schema do
 
   def hydrate(_, _) do
     ...
+  end
+end
+```
+
+### Using Dataloader in \_resolve_reference queries
+
+You can use Dataloader in to resolve references to specific objects, but it requires manually setting up the batch and item key, as the field has no parent. Resolution for both \_resolve\_reference fields are functionally equivalent.
+
+```elixir
+defmodule Example.Schema do
+  use Absinthe.Schema
+  use Absinthe.Federation.Schema
+
+  import Absinthe.Resolution.Helpers, only: [on_load: 2, dataloader: 2]
+
+  def context(ctx) do
+    loader =
+      Dataloader.new()
+      |> Dataloader.add_source(Example.Loader, Dataloader.Ecto.new(Example.Repo))
+
+    Map.put(ctx, :loader, loader)
+  end
+
+  def plugins do
+    [Absinthe.Middleware.Dataloader] ++ Absinthe.Plugin.defaults()
+  end
+
+  object :item do
+    key_fields("item_id")
+
+    # Using the dataloader/2 resolution helper
+    field :_resolve_reference, :item do
+      resolve dataloader(Example.Loader, fn _parent, args, _res ->
+                %{batch: {{:one, Example.Item}, %{}}, item: [item_id: args.item_id]}
+              end)
+    end
+  end
+
+  object :verbose_item do
+    key_fields("item_id")
+
+    # Using the on_load/2 resolution helper
+    field :_resolve_reference, :verbose_item do
+      resolve fn %{item_id: id}, %{context: %{loader: loader}} ->
+        batch_key = {:one, Example.Item, %{}}
+        item_key = [item_id: id]
+
+        loader
+        |> Dataloader.load(Example.Loader, batch_key, item_key)
+        |> on_load(fn loader ->
+          result = Dataloader.get(loader, Example.Loader, batch_key, item_key)
+          {:ok, result}
+        end)
+    end
   end
 end
 ```
