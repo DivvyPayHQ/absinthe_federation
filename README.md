@@ -14,7 +14,7 @@ Install from [Hex](https://hex.pm/packages/absinthe_federation):
 ```elixir
 def deps do
   [
-    {:absinthe_federation, "~> 0.5"}
+    {:absinthe_federation, "~> 0.6"}
   ]
 end
 ```
@@ -237,7 +237,7 @@ end
 
 ### Using Dataloader in \_resolve_reference queries
 
-You can use Dataloader in to resolve references to specific objects, but it requires manually setting up the batch and item key, as the field has no parent. Resolution for both \_resolve\_reference fields are functionally equivalent.
+You can use Dataloader in to resolve references to specific objects, but it requires manually setting up the batch and item key, as the field has no parent. Resolution for both \_resolve_reference fields are functionally equivalent.
 
 ```elixir
 defmodule Example.Schema do
