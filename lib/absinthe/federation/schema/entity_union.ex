@@ -35,7 +35,7 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
          %{name: name, __private__: _private} = node,
          types
        ) do
-    if has_key_directive?(node) do
+    if is_object_type?(node) and has_key_directive?(node) do
       {node, [%Name{name: name} | types]}
     else
       {node, types}
@@ -54,6 +54,9 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
 
   defp is_key_directive?(%{name: "key"} = _directive), do: true
   defp is_key_directive?(_directive), do: false
+
+  defp is_object_type?(%Absinthe.Blueprint.Schema.ObjectTypeDefinition{}), do: true
+  defp is_object_type?(_), do: false
 end
 
 defprotocol Absinthe.Federation.Schema.EntityUnion.Resolver do

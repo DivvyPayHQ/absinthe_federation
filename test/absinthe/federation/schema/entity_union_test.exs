@@ -194,5 +194,34 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       sdl = Absinthe.Schema.to_sdl(SDLSchemaNoTypesForUnionEntity)
       refute sdl =~ "union _Entity"
     end
+
+    defmodule MacroSchemaWithInterface do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :shapes, list_of(:shape)
+      end
+
+      interface :shape do
+        key_fields("id")
+        field :id, non_null(:id)
+      end
+
+      object :circle do
+        key_fields("id")
+        field :id, non_null(:id)
+      end
+
+      object :rectangle do
+        key_fields("id")
+        field :id, non_null(:id)
+      end
+    end
+
+    test "omits interfaces with keys from the entities union" do
+      sdl = Absinthe.Schema.to_sdl(MacroSchemaWithInterface)
+      assert sdl =~ "union _Entity = Circle | Rectangle"
+    end
   end
 end
