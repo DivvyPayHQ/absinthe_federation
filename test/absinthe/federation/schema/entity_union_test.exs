@@ -194,34 +194,98 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
       sdl = Absinthe.Schema.to_sdl(SDLSchemaNoTypesForUnionEntity)
       refute sdl =~ "union _Entity"
     end
+  end
 
+  describe "entity interface tests" do
     defmodule MacroSchemaWithInterface do
       use Absinthe.Schema
       use Absinthe.Federation.Schema
 
       query do
-        field :shapes, list_of(:shape)
+        field :shapes, list_of(:shape) do
+          resolve fn _args, _info ->
+            shapes = [
+              %Example.EntityInterface.Circle{id: "1"},
+              %Example.EntityInterface.Rectangle{id: "2"}
+            ]
+
+            {:ok, shapes}
+          end
+        end
       end
 
       interface :shape do
         key_fields("id")
         field :id, non_null(:id)
+
+        resolve_type fn
+          data, _ ->
+            case data do
+              %Example.EntityInterface.Circle{} -> :circle
+              %Example.EntityInterface.Rectangle{} -> :rectangle
+              %{id: "123"} -> :circle
+              %{id: "321"} -> :rectangle
+              _ -> nil
+            end
+        end
       end
 
       object :circle do
         key_fields("id")
         field :id, non_null(:id)
+
+        interface :shape
       end
 
       object :rectangle do
         key_fields("id")
         field :id, non_null(:id)
+
+        interface :shape
       end
     end
 
     test "omits interfaces with keys from the entities union" do
       sdl = Absinthe.Schema.to_sdl(MacroSchemaWithInterface)
       assert sdl =~ "union _Entity = Circle | Rectangle"
+    end
+
+    test "correct object type returned" do
+      query = """
+        {
+          _entities(representations: [{__typename: "Shape", id: "123"}, {__typename: "Shape", id: "321"}]) {
+            __typename
+            ...on Circle {
+              id
+            }
+            ...on Rectangle {
+              id
+            }
+          }
+        }
+      """
+
+      %{data: %{"_entities" => [circle, rectangle]}} =
+        Absinthe.run!(query, MacroSchemaWithInterface)
+
+      assert circle == %{"id" => "123", "__typename" => "Circle"}
+      assert rectangle == %{"id" => "321", "__typename" => "Rectangle"}
+    end
+
+    test "correct data returned" do
+      query = """
+        {
+          shapes {
+            id
+          }
+        }
+      """
+
+      %{data: %{"shapes" => [circle, rectangle]}} =
+        Absinthe.run!(query, MacroSchemaWithInterface)
+
+      assert circle == %{"id" => "1"}
+      assert rectangle == %{"id" => "2"}
     end
   end
 end
