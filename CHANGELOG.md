@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1
+
+- Bug Fix: [`@interfaceObject` entity resolution and SDL presence](https://github.com/DivvyPayHQ/absinthe_federation/pull/106)
+
 ## 0.6.0
 
 - [Rework how entities field is resolved](https://github.com/DivvyPayHQ/absinthe_federation/pull/104):
