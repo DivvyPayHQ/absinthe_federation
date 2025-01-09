@@ -35,7 +35,7 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
          %{name: name, __private__: _private} = node,
          types
        ) do
-    if has_key_directive?(node) do
+    if is_object_type?(node) and has_key_directive?(node) do
       {node, [%Name{name: name} | types]}
     else
       {node, types}
@@ -54,6 +54,9 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
 
   defp is_key_directive?(%{name: "key"} = _directive), do: true
   defp is_key_directive?(_directive), do: false
+
+  defp is_object_type?(%Absinthe.Blueprint.Schema.ObjectTypeDefinition{}), do: true
+  defp is_object_type?(_), do: false
 end
 
 defprotocol Absinthe.Federation.Schema.EntityUnion.Resolver do
@@ -64,19 +67,34 @@ end
 defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
   alias Absinthe.Adapter.LanguageConventions
 
-  def resolve_type(%struct_name{}, resolution) do
-    struct_name
-    |> Module.split()
-    |> List.last()
-    |> to_internal_name(resolution.adapter)
+  def resolve_type(%struct_name{} = data, resolution) do
+    typename =
+      struct_name
+      |> Module.split()
+      |> List.last()
+
+    inner_resolve_type(data, typename, resolution)
   end
 
-  def resolve_type(%{__typename: typename}, resolution) do
-    to_internal_name(typename, resolution.adapter)
+  def resolve_type(%{__typename: typename} = data, resolution) do
+    inner_resolve_type(data, typename, resolution)
   end
 
-  def resolve_type(%{"__typename" => typename}, resolution) do
-    to_internal_name(typename, resolution.adapter)
+  def resolve_type(%{"__typename" => typename} = data, resolution) do
+    inner_resolve_type(data, typename, resolution)
+  end
+
+  defp inner_resolve_type(data, typename, resolution) do
+    type = Absinthe.Schema.lookup_type(resolution.schema, typename)
+
+    case type do
+      %{resolve_type: resolve_type} when not is_nil(resolve_type) ->
+        resolver = Absinthe.Type.function(type, :resolve_type)
+        resolver.(data, resolution)
+
+      _type ->
+        to_internal_name(typename, resolution.adapter)
+    end
   end
 
   defp to_internal_name(name, adapter) when is_nil(adapter) do
