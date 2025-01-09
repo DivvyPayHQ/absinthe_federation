@@ -96,7 +96,6 @@ defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
         to_internal_name(typename, resolution.adapter)
     end
   end
-  end
 
   defp to_internal_name(name, adapter) when is_nil(adapter) do
     name
