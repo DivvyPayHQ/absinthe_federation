@@ -87,21 +87,15 @@ defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
   defp inner_resolve_type(data, typename, resolution) do
     type = Absinthe.Schema.lookup_type(resolution.schema, typename)
 
-    if is_nil(type) do
-      to_internal_name(typename, resolution.adapter)
-    else
-      if(Map.has_key?(type, :resolve_type)) do
+    case type do
+      %{resolve_type: resolve_type} when not is_nil(resolve_type) ->
         resolver = Absinthe.Type.function(type, :resolve_type)
+        resolver.(data, resolution)
 
-        if is_nil(resolver) do
-          to_internal_name(typename, resolution.adapter)
-        else
-          resolver.(data, resolution)
-        end
-      else
+      _type ->
         to_internal_name(typename, resolution.adapter)
-      end
     end
+  end
   end
 
   defp to_internal_name(name, adapter) when is_nil(adapter) do
