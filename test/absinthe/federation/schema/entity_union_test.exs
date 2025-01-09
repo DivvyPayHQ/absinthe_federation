@@ -218,6 +218,16 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         key_fields("id")
         field :id, non_null(:id)
 
+        field :_resolve_reference, :shape do
+          resolve(fn _, %{id: id} = args, _ ->
+            case id do
+              "123" -> {:ok, args}
+              "321" -> {:ok, args}
+              _ -> {:error, "ID doesn't exist #{id}"}
+            end
+          end)
+        end
+
         resolve_type fn
           data, _ ->
             case data do
@@ -235,6 +245,15 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         field :id, non_null(:id)
 
         interface :shape
+
+        field :_resolve_reference, :circle do
+          resolve(fn _, %{id: id} = args, _ ->
+            case id do
+              "123" -> {:ok, args}
+              _ -> {:error, "ID doesn't exist #{id}"}
+            end
+          end)
+        end
       end
 
       object :rectangle do
@@ -242,6 +261,15 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         field :id, non_null(:id)
 
         interface :shape
+
+        field :_resolve_reference, :rectangle do
+          resolve(fn _, %{id: id} = args, _ ->
+            case id do
+              "321" -> {:ok, args}
+              _ -> {:error, "ID doesn't exist #{id}"}
+            end
+          end)
+        end
       end
     end
 

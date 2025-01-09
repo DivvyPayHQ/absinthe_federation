@@ -67,14 +67,24 @@ end
 defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
   alias Absinthe.Adapter.LanguageConventions
 
-  def resolve_type(%struct_name{}, resolution) do
-    struct_name
-    |> Module.split()
-    |> List.last()
-    |> to_internal_name(resolution.adapter)
+  def resolve_type(%struct_name{} = data, resolution) do
+    typename =
+      struct_name
+      |> Module.split()
+      |> List.last()
+
+    inner_resolve_type(data, typename, resolution)
   end
 
   def resolve_type(%{__typename: typename} = data, resolution) do
+    inner_resolve_type(data, typename, resolution)
+  end
+
+  def resolve_type(%{"__typename" => typename} = data, resolution) do
+    inner_resolve_type(data, typename, resolution)
+  end
+
+  defp inner_resolve_type(data, typename, resolution) do
     type = Absinthe.Schema.lookup_type(resolution.schema, typename)
 
     if is_nil(type) do
@@ -92,10 +102,6 @@ defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
         to_internal_name(typename, resolution.adapter)
       end
     end
-  end
-
-  def resolve_type(%{"__typename" => typename}, resolution) do
-    to_internal_name(typename, resolution.adapter)
   end
 
   defp to_internal_name(name, adapter) when is_nil(adapter) do

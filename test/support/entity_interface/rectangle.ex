@@ -4,8 +4,4 @@ defmodule Example.EntityInterface.Rectangle do
         }
 
   defstruct id: ""
-
-  defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
-    def resolve_type(_, _), do: :rectangle
-  end
 end
