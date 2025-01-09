@@ -293,8 +293,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         }
       """
 
-      %{data: %{"_entities" => [circle, rectangle]}} =
-        Absinthe.run!(query, MacroSchemaWithInterface)
+      %{data: %{"_entities" => [circle, rectangle]}} = Absinthe.run!(query, MacroSchemaWithInterface)
 
       assert circle == %{"id" => "123", "__typename" => "Circle"}
       assert rectangle == %{"id" => "321", "__typename" => "Rectangle"}
@@ -309,8 +308,7 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
         }
       """
 
-      %{data: %{"shapes" => [circle, rectangle]}} =
-        Absinthe.run!(query, MacroSchemaWithInterface)
+      %{data: %{"shapes" => [circle, rectangle]}} = Absinthe.run!(query, MacroSchemaWithInterface)
 
       assert circle == %{"id" => "1"}
       assert rectangle == %{"id" => "2"}
