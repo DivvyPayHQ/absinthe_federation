@@ -249,6 +249,34 @@ defmodule Absinthe.Federation.Notation do
   end
 
   @doc """
+  The progressive `@override` feature enables the gradual, progressive deployment of a subgraph with an @override field.
+
+  ## Example
+
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :name, :string do
+          progressive_override(from: "SubgraphA", label: "percent(20)")
+        end
+      end
+
+
+  ## SDL Output
+
+      type User @key(fields: "id") {
+        id: ID!
+        name: String @override(from: "SubgraphA", label: "percent(20)")
+      }
+  """
+  defmacro progressive_override(args) when is_list(args) do
+    quote do
+      meta :progressive_override, unquote(args)
+    end
+  end
+
+  @doc """
   The `@inaccessible` directive indicates that a field or type should be omitted from the gateway's API schema,
   even if it's also defined in other subgraphs.
 
@@ -348,6 +376,177 @@ defmodule Absinthe.Federation.Notation do
   defmacro tag(name) when is_binary(name) do
     quote do
       meta :tag, unquote(name)
+    end
+  end
+
+  @doc """
+  The `@authenticated` directive marks specific fields and types as requiring authentication.
+
+  ## Example
+
+      object :secret do
+        field :text, :string do
+          authenticated()
+        end
+      end
+
+
+  ## SDL Output
+
+      type Secret {
+        text: String @authenticated
+      }
+  """
+  defmacro authenticated() do
+    quote do
+      meta :authenticated, true
+    end
+  end
+
+  @doc """
+  The `@requiresScopes` directive marks fields and types as restricted based on required scopes.
+
+  ## Example
+
+      object :user do
+        field :id, non_null(:id)
+        field :username, :string
+        field :email, :string do
+          requires_scopes([["read:email"]])
+        end
+        field :profile_image, :string
+      end
+
+
+  ## SDL Output
+
+     type User {
+       id: ID!
+       username: String
+       email: String @requiresScopes(scopes: [["read:email"]])
+       profileImage: String
+     }
+  """
+  defmacro requires_scopes(scopes) when is_list(scopes) do
+    quote do
+      meta :requires_scopes, unquote(scopes)
+    end
+  end
+
+  @doc """
+  The `@policy` directive marks fields and types as restricted based on authorization policies evaluated in a Rhai script or coprocessor.
+  This enables custom authorization validation beyond authentication and scopes.
+
+  ## Example
+
+      object :user do
+        field :id, non_null(:id)
+        field :username, :string
+        field :email, :string 
+        field :profile_image, :string
+        field :credit_card, :string do
+         policy([["read_credit_card"]])
+        end
+      end
+
+
+  ## SDL Output
+
+    type User {
+      id: ID!
+      username: String
+      email: String
+      profileImage: String
+      credit_card: String @policy(policies: [["read_credit_card"]])
+    }
+  """
+  defmacro policy(policies) when is_list(policies) do
+    quote do
+      meta :policies, unquote(policies)
+    end
+  end
+
+  @doc """
+  The `@listSize` directive is used to customize the cost calculation of the demand control feature of GraphOS Router.
+
+  ## Example
+
+     object :post do
+       field :text, :string
+     end
+
+     object :user do
+      field :posts, non_null(list_of(:post)) do
+        list_size(
+          assumed_size: 10, 
+          slicing_arguments: ["first", "last"],
+          sized_fields: ["postCount"],
+          required_one_slicing_argument: false
+        )
+        arg :first, :integer
+        arg :last, :integer
+      end
+    end
+
+
+  ## SDL Output
+
+    type User {
+      posts(first: Int, last: Int): [Post]! @listSize(assumedSize: 10, slicingArguments: ["first", "last"], sizedFields: ["postCount"], requiredOneSlicingArgument: false)
+    }
+  """
+  defmacro list_size(opts) when is_list(opts) do
+    quote do
+      meta :list_size, unquote(opts)
+    end
+  end
+
+  @doc """
+  The `@cost` directive defines a custom weight for a schema location. For GraphOS Router, it customizes the operation cost calculation of the demand control feature.
+
+  ## Example
+
+      object :user do
+        field :posts, list_of(:post) do
+          cost(5)
+          resolve &PostResolvers.list_for_user/3
+        end
+      end
+
+  ## SDL Output
+
+      type User {
+        posts: [Post] @cost(weight: 5)
+      }
+  """
+  defmacro cost(weight) when is_integer(weight) do
+    quote do
+      meta :cost, unquote(weight)
+    end
+  end
+
+  @doc """
+  The `@context` directive defines a named context from which a field of the annotated type can be passed to a receiver of the context.
+  The receiver must be a field annotated with the `@fromContext` directive.
+
+  ## Example
+
+      object :user do
+        context("userContext")
+        field :id, non_null(:id)
+        field :name, :string
+      end
+
+  ## SDL Output
+
+      type User @context(name: "userContext") {
+        id: ID!
+        name: String
+      }
+  """
+  defmacro context(name) when is_binary(name) do
+    quote do
+      meta :context, unquote(name)
     end
   end
 

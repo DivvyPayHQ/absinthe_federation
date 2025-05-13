@@ -195,4 +195,257 @@ defmodule Absinthe.Federation.NotationTest do
       assert sdl =~ ~s{type Media @interfaceObject @key(fields: "id")}
     end
   end
+
+  test "schema with authenticated directive is valid" do
+    defmodule AuthenticatedSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link, url: "https://specs.apollo.dev/federation/v2.5", import: ["@authenticated"]
+      end
+
+      query do
+        field :secrets, list_of(:secret)
+      end
+
+      object :secret do
+        field :text, :string do
+          authenticated()
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(AuthenticatedSchema)
+
+    assert sdl =~ ~s{text: String @authenticated}
+  end
+
+  test "schema with requiresScopes directive is valid" do
+    defmodule RequiresScopesSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.5",
+          import: ["@requiresScopes"]
+      end
+
+      query do
+        field :get_secrets, list_of(:secret) do
+          requires_scopes([["read:secrets"], ["read:email"]])
+        end
+      end
+
+      object :user do
+        field :id, non_null(:id)
+        field :username, non_null(:string)
+
+        field :email, :string do
+          requires_scopes([["read:email"]])
+        end
+
+        field :secrets, non_null(list_of(non_null(:secret)))
+      end
+
+      object :secret do
+        field :author, :user
+        field :text, :string
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(RequiresScopesSchema)
+
+    assert sdl =~ ~s{getSecrets: [Secret] @requiresScopes(scopes: [[\"read:secrets\"], [\"read:email\"]])}
+    assert sdl =~ ~s{email: String @requiresScopes(scopes: [[\"read:email\"]])}
+  end
+
+  test "schema with policy directive is valid" do
+    defmodule PolicySchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.6",
+          import: ["@authenticated", "@policy"]
+      end
+
+      query do
+        field :users, list_of(:user)
+      end
+
+      object :user do
+        field :id, non_null(:id)
+        field :username, non_null(:string)
+        field :email, :string
+
+        field :credit_card, :string do
+          authenticated()
+          policy([["read_credit_card"]])
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(PolicySchema)
+
+    assert sdl =~ ~s{creditCard: String @authenticated @policy(policies: [["read_credit_card"]])}
+  end
+
+  test "schema with context directive is valid" do
+    defmodule ContextSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.8",
+          import: ["@context"]
+      end
+
+      query do
+        field :users, list_of(:user)
+      end
+
+      object :user do
+        context("userContext")
+        field :id, non_null(:id)
+        field :name, :string
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(ContextSchema)
+
+    assert sdl =~ ~s{type User @context(name: "userContext")}
+  end
+
+  test "schema with cost directive is valid" do
+    defmodule CostSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.9",
+          import: ["@cost"]
+      end
+
+      query do
+        field :users, list_of(:user)
+      end
+
+      object :post do
+        field :content, :string
+      end
+
+      object :user do
+        field :posts, list_of(:post) do
+          cost(5)
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(CostSchema)
+
+    assert sdl =~ ~s{posts: [Post] @cost(weight: 5)}
+  end
+
+  test "schema with listSize directive is valid" do
+    defmodule ListSizeSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.9",
+          import: ["@listSize"]
+      end
+
+      query do
+        field :users, list_of(:user)
+      end
+
+      object :post do
+        field :text, :string
+      end
+
+      object :user do
+        field :posts, non_null(list_of(:post)) do
+          list_size(
+            assumed_size: 10,
+            slicing_arguments: ["first", "last"],
+            sized_fields: ["postCount"],
+            required_one_slicing_argument: false
+          )
+
+          arg :first, :integer
+          arg :last, :integer
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(ListSizeSchema)
+
+    assert sdl =~
+             ~s{posts(first: Int, last: Int): [Post]! @listSize(assumedSize: 10, slicingArguments: ["first", "last"], sizedFields: ["postCount"], requiredOneSlicingArgument: false)}
+  end
+
+  test "schema with progressive override directive is valid" do
+    defmodule ProgressiveOverrideSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.7",
+          import: ["@override"]
+      end
+
+      query do
+        field :bill, :bill
+      end
+
+      object :bill do
+        field :id, non_null(:id)
+
+        field :amount, :integer do
+          progressive_override(from: "Payments", label: "percent(100)")
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(ProgressiveOverrideSchema)
+
+    assert sdl =~ ~s{amount: Int @override(from: "Payments", label: "percent(100)")}
+  end
+
+  test "schema with override directive is valid" do
+    defmodule OverrideSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.3",
+          import: ["@override"]
+      end
+
+      query do
+        field :bill, :bill
+      end
+
+      object :bill do
+        field :id, non_null(:id)
+
+        field :amount, :integer do
+          override_from("Payments")
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(OverrideSchema)
+
+    assert sdl =~ ~s{amount: Int @override(from: "Payments")}
+  end
 end
