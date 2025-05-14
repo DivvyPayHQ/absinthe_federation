@@ -242,37 +242,9 @@ defmodule Absinthe.Federation.Notation do
         name: String @override(from: "SubgraphA")
       }
   """
-  defmacro override_from(subgraph) when is_binary(subgraph) do
+  defmacro override_from(subgraph) do
     quote do
       meta :override_from, unquote(subgraph)
-    end
-  end
-
-  @doc """
-  The progressive `@override` feature enables the gradual, progressive deployment of a subgraph with an @override field.
-
-  ## Example
-
-      object :user do
-        key_fields("id")
-        field :id, non_null(:id)
-
-        field :name, :string do
-          progressive_override(from: "SubgraphA", label: "percent(20)")
-        end
-      end
-
-
-  ## SDL Output
-
-      type User @key(fields: "id") {
-        id: ID!
-        name: String @override(from: "SubgraphA", label: "percent(20)")
-      }
-  """
-  defmacro progressive_override(args) when is_list(args) do
-    quote do
-      meta :progressive_override, unquote(args)
     end
   end
 
@@ -452,13 +424,13 @@ defmodule Absinthe.Federation.Notation do
 
   ## SDL Output
 
-    type User {
-      id: ID!
-      username: String
-      email: String
-      profileImage: String
-      credit_card: String @policy(policies: [["read_credit_card"]])
-    }
+      type User {
+        id: ID!
+        username: String
+        email: String
+        profileImage: String
+        credit_card: String @policy(policies: [["read_credit_card"]])
+      }
   """
   defmacro policy(policies) when is_list(policies) do
     quote do
@@ -471,29 +443,29 @@ defmodule Absinthe.Federation.Notation do
 
   ## Example
 
-     object :post do
-       field :text, :string
-     end
-
-     object :user do
-      field :posts, non_null(list_of(:post)) do
-        list_size(
-          assumed_size: 10, 
-          slicing_arguments: ["first", "last"],
-          sized_fields: ["postCount"],
-          required_one_slicing_argument: false
-        )
-        arg :first, :integer
-        arg :last, :integer
+      object :post do
+        field :text, :string
       end
-    end
+
+      object :user do
+       field :posts, non_null(list_of(:post)) do
+         list_size(
+           assumed_size: 10, 
+           slicing_arguments: ["first", "last"],
+           sized_fields: ["postCount"],
+           required_one_slicing_argument: false
+         )
+         arg :first, :integer
+         arg :last, :integer
+       end
+      end
 
 
   ## SDL Output
 
-    type User {
-      posts(first: Int, last: Int): [Post]! @listSize(assumedSize: 10, slicingArguments: ["first", "last"], sizedFields: ["postCount"], requiredOneSlicingArgument: false)
-    }
+      type User {
+        posts(first: Int, last: Int): [Post]! @listSize(assumedSize: 10, slicingArguments: ["first", "last"], sizedFields: ["postCount"], requiredOneSlicingArgument: false)
+      }
   """
   defmacro list_size(opts) when is_list(opts) do
     quote do

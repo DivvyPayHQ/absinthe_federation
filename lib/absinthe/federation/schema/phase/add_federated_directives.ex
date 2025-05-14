@@ -35,7 +35,7 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
     |> maybe_add_inaccessible_directive(meta)
     |> maybe_add_interface_object_directive(meta)
     |> maybe_add_tag_directive(meta)
-    |> maybe_add_requiresScopes_directive(meta)
+    |> maybe_add_requires_scopes_directive(meta)
     |> maybe_add_policy_directive(meta)
     |> maybe_add_authenticated_directive(meta)
     |> maybe_add_context_directive(meta)
@@ -90,13 +90,13 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
 
   defp maybe_add_extends_directive(node, _meta), do: node
 
-  defp maybe_add_requiresScopes_directive(node, %{requires_scopes: scopes, absinthe_adapter: adapter}) do
+  defp maybe_add_requires_scopes_directive(node, %{requires_scopes: scopes, absinthe_adapter: adapter}) do
     directive = Directive.build("requires_scopes", adapter, scopes: scopes)
 
     add_directive(node, directive)
   end
 
-  defp maybe_add_requiresScopes_directive(node, _meta), do: node
+  defp maybe_add_requires_scopes_directive(node, _meta), do: node
 
   defp maybe_add_authenticated_directive(node, %{authenticated: true, absinthe_adapter: adapter}) do
     directive = Directive.build("authenticated", adapter)
@@ -146,13 +146,13 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
 
   defp maybe_add_shareable_directive(node, _meta), do: node
 
-  defp maybe_add_override_directive(node, %{override_from: subgraph, absinthe_adapter: adapter}) do
+  defp maybe_add_override_directive(node, %{override_from: subgraph, absinthe_adapter: adapter}) when is_binary(subgraph) do
     directive = Directive.build("override", adapter, from: subgraph)
 
     add_directive(node, directive)
   end
 
-  defp maybe_add_override_directive(node, %{progressive_override: args, absinthe_adapter: adapter}) do
+  defp maybe_add_override_directive(node, %{override_from: args, absinthe_adapter: adapter}) when is_list(args) do
     directive = Directive.build("override", adapter, args)
 
     add_directive(node, directive)

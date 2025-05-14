@@ -410,7 +410,7 @@ defmodule Absinthe.Federation.NotationTest do
         field :id, non_null(:id)
 
         field :amount, :integer do
-          progressive_override(from: "Payments", label: "percent(100)")
+          override_from(from: "Payments", label: "percent(100)")
         end
       end
     end
