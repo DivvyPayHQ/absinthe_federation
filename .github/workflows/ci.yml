@@ -14,15 +14,29 @@ permissions:
 jobs:
   unit_tests:
     name: Unit tests Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       matrix:
         include:
+          - elixir: "1.15"
+            otp: "26"
+          - elixir: "1.15"
+            otp: "25"
+          - elixir: "1.15"
+            otp: "24"
           - elixir: "1.14"
             otp: "25"
-          - elixir: "1.12"
+          - elixir: "1.14"
+            otp: "24"
+          - elixir: "1.13"
+            otp: "25"
+          - elixir: "1.13"
+            otp: "24"
+          - elixir: "1.13"
             otp: "23"
+          - elixir: "1.12"
+            otp: "24"
 
     steps:
       - name: Checkout
@@ -84,8 +98,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - elixir: "1.14"
-            otp: "25"
+          - elixir: "1.15"
+            otp: "26"
 
     steps:
       - name: Save action secrets
