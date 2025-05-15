@@ -410,14 +410,14 @@ defmodule Absinthe.Federation.NotationTest do
         field :id, non_null(:id)
 
         field :amount, :integer do
-          override_from(from: "Payments", label: "percent(100)")
+          override_from("Payments", label: "percent(10)")
         end
       end
     end
 
     sdl = Absinthe.Schema.to_sdl(ProgressiveOverrideSchema)
 
-    assert sdl =~ ~s{amount: Int @override(from: "Payments", label: "percent(100)")}
+    assert sdl =~ ~s{amount: Int @override(from: "Payments", label: "percent(10)")}
   end
 
   test "schema with override directive is valid" do

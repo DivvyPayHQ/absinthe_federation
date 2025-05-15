@@ -146,13 +146,7 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
 
   defp maybe_add_shareable_directive(node, _meta), do: node
 
-  defp maybe_add_override_directive(node, %{override_from: subgraph, absinthe_adapter: adapter}) when is_binary(subgraph) do
-    directive = Directive.build("override", adapter, from: subgraph)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_override_directive(node, %{override_from: args, absinthe_adapter: adapter}) when is_list(args) do
+  defp maybe_add_override_directive(node, %{override_from: args, absinthe_adapter: adapter}) do
     directive = Directive.build("override", adapter, args)
 
     add_directive(node, directive)

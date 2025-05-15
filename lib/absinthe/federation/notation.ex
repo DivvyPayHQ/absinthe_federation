@@ -219,12 +219,16 @@ defmodule Absinthe.Federation.Notation do
   end
 
   @doc """
-  Adds The @override directive is used to indicate that the current subgraph is
+  The `@override` directive is used to indicate that the current subgraph is
   taking responsibility for resolving the marked field away from the
   subgraph specified in the from argument.
 
-  ## Example
+  The progressive `@override` feature enables the gradual, progressive deployment of a subgraph with an `@override` field.
+  As a subgraph developer, you can customize the percentage of traffic that the overriding and overridden subgraphs each resolve for a field. 
 
+  ## Example 
+
+      # @override 
       object :user do
         key_fields("id")
         field :id, non_null(:id)
@@ -234,17 +238,42 @@ defmodule Absinthe.Federation.Notation do
         end
       end
 
+      # progressive @override     
+      object :user do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :name, :string do
+          override_from("SubgraphA", label: "percent(10)")
+        end
+      end
 
   ## SDL Output
 
+      # @override
       type User @key(fields: "id") {
         id: ID!
         name: String @override(from: "SubgraphA")
       }
+
+      # progressive @override
+      type User @key(fields: "id") {
+        id: ID!
+        name: String @override(from: "SubgraphA", label: "percent(10)")
+      }
+    
   """
-  defmacro override_from(subgraph) do
-    quote do
-      meta :override_from, unquote(subgraph)
+  defmacro override_from(subgraph, opts \\ []) when is_binary(subgraph) and is_list(opts) do
+    label = Keyword.get(opts, :label)
+
+    if label do
+      quote do
+        meta :override_from, from: unquote(subgraph), label: unquote(label)
+      end
+    else
+      quote do
+        meta :override_from, from: unquote(subgraph)
+      end
     end
   end
 
