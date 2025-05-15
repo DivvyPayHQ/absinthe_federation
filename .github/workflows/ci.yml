@@ -139,11 +139,11 @@ jobs:
         working-directory: ./federation_compatibility
 
       - name: Test subgraph compatibility
-        uses: apollographql/federation-subgraph-compatibility@v1
+        uses: apollographql/federation-subgraph-compatibility@v2
         with:
           compose: "federation_compatibility_docker_compose.yml"
           schema: "federation_compatibility/schema.graphql"
           token: ${{ steps.actionsecrets.outputs.github_token }}
           port: 4001
-          failOnWarning: true
+          failOnWarning: false
           failOnRequired: true

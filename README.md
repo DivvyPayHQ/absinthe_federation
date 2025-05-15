@@ -318,16 +318,13 @@ defmodule Example.Schema do
 
 + extend schema do
 +   directive :link,
-+     url: "https://specs.apollo.dev/federation/v2.9",
++     url: "https://specs.apollo.dev/federation/v2.7",
 +     import: [
         "@authenticated",
-        "@context",
-        "@cost",
         "@extends",
         "@external",
         "@inaccessible",
         "@key",
-        "@listSize",
         "@override",
         "@policy",
         "@provides",
