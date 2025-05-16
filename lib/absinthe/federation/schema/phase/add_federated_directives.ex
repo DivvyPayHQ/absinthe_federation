@@ -35,6 +35,12 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
     |> maybe_add_inaccessible_directive(meta)
     |> maybe_add_interface_object_directive(meta)
     |> maybe_add_tag_directive(meta)
+    |> maybe_add_requires_scopes_directive(meta)
+    |> maybe_add_policy_directive(meta)
+    |> maybe_add_authenticated_directive(meta)
+    |> maybe_add_context_directive(meta)
+    |> maybe_add_list_size_directive(meta)
+    |> maybe_add_cost_directive(meta)
   end
 
   @spec maybe_add_key_directive(term(), map()) :: term()
@@ -84,6 +90,54 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
 
   defp maybe_add_extends_directive(node, _meta), do: node
 
+  defp maybe_add_requires_scopes_directive(node, %{requires_scopes: scopes, absinthe_adapter: adapter}) do
+    directive = Directive.build("requires_scopes", adapter, scopes: scopes)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_requires_scopes_directive(node, _meta), do: node
+
+  defp maybe_add_authenticated_directive(node, %{authenticated: true, absinthe_adapter: adapter}) do
+    directive = Directive.build("authenticated", adapter)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_authenticated_directive(node, _meta), do: node
+
+  defp maybe_add_policy_directive(node, %{policies: policies, absinthe_adapter: adapter}) do
+    directive = Directive.build("policy", adapter, policies: policies)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_policy_directive(node, _meta), do: node
+
+  defp maybe_add_context_directive(node, %{context: name, absinthe_adapter: adapter}) do
+    directive = Directive.build("context", adapter, name: name)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_context_directive(node, _meta), do: node
+
+  defp maybe_add_list_size_directive(node, %{list_size: args, absinthe_adapter: adapter}) do
+    directive = Directive.build("list_size", adapter, args)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_list_size_directive(node, _meta), do: node
+
+  defp maybe_add_cost_directive(node, %{cost: weight, absinthe_adapter: adapter}) do
+    directive = Directive.build("cost", adapter, weight: weight)
+
+    add_directive(node, directive)
+  end
+
+  defp maybe_add_cost_directive(node, _meta), do: node
+
   defp maybe_add_shareable_directive(node, %{shareable: true, absinthe_adapter: adapter}) do
     directive = Directive.build("shareable", adapter)
 
@@ -92,8 +146,8 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
 
   defp maybe_add_shareable_directive(node, _meta), do: node
 
-  defp maybe_add_override_directive(node, %{override_from: subgraph, absinthe_adapter: adapter}) do
-    directive = Directive.build("override", adapter, from: subgraph)
+  defp maybe_add_override_directive(node, %{override_from: args, absinthe_adapter: adapter}) do
+    directive = Directive.build("override", adapter, args)
 
     add_directive(node, directive)
   end

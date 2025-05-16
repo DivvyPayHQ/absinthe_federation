@@ -5,6 +5,9 @@ defmodule Absinthe.Federation.Schema.Directive do
   alias Absinthe.Blueprint
   alias Absinthe.Blueprint.Directive, as: BlueprintDirective
   alias Absinthe.Blueprint.Input.Argument
+  alias Absinthe.Blueprint.Input.List
+  alias Absinthe.Blueprint.Input.Boolean
+  alias Absinthe.Blueprint.Input.Integer
   alias Absinthe.Blueprint.Input.RawValue
   alias Absinthe.Blueprint.Input.String
   alias Absinthe.Blueprint.SourceLocation
@@ -36,27 +39,26 @@ defmodule Absinthe.Federation.Schema.Directive do
     }
   end
 
-  defp build_arguments("key", adapter, fields) when is_list(fields) do
+  defp build_arguments(directive_name, adapter, fields) when is_list(fields) do
     fields
-    |> Enum.map(fn {key, value} -> {key, to_external_name(value, adapter)} end)
-    |> Enum.map(&build_argument/1)
+    |> Enum.map(fn {key, value} -> {key, maybe_convert_value_case(directive_name, key, value, adapter)} end)
+    |> Enum.map(fn field -> build_argument(field, adapter) end)
   end
 
-  defp build_arguments(_name, _adapter, fields) when is_list(fields) do
-    Enum.map(fields, &build_argument/1)
-  end
-
-  defp build_argument({key, value}) when is_atom(key) and is_binary(value) do
+  defp build_argument({key, value}, adapter) when is_atom(key) do
     %Argument{
-      name: Atom.to_string(key),
+      name: to_external_name(key, adapter),
       input_value: %RawValue{
-        content: %String{
-          value: value
-        }
+        content: build_value(value)
       },
       source_location: %SourceLocation{line: 0, column: 0}
     }
   end
+
+  defp build_value(value) when is_list(value), do: %List{items: Enum.map(value, &build_value/1)}
+  defp build_value(value) when is_binary(value), do: %String{value: value}
+  defp build_value(value) when is_integer(value), do: %Integer{value: value}
+  defp build_value(value) when is_boolean(value), do: %Boolean{value: value}
 
   defp to_external_name(key, adapter) when is_atom(key) do
     key
@@ -72,7 +74,25 @@ defmodule Absinthe.Federation.Schema.Directive do
     end
   end
 
+  defp to_external_name(key, _adapter) do
+    key
+  end
+
   defp adapter_has_to_external_name_modifier?(adapter) do
     Keyword.get(adapter.__info__(:functions), :to_external_name) == 2
+  end
+
+  defp maybe_convert_value_case("key", :fields, value, adapter) when is_binary(value) do
+    to_external_name(value, adapter)
+  end
+
+  defp maybe_convert_value_case("list_size", :sized_fields, values, adapter) when is_list(values) do
+    Enum.map(values, fn value ->
+      to_external_name(value, adapter)
+    end)
+  end
+
+  defp maybe_convert_value_case(_directive_name, _key, value, _adapter) do
+    value
   end
 end

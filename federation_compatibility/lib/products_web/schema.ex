@@ -40,15 +40,18 @@ defmodule ProductsWeb.Schema do
     directive :link, url: "https://divvypay.com/test/v2.4", import: ["@custom"]
 
     directive :link,
-      url: "https://specs.apollo.dev/federation/v2.3",
+      url: "https://specs.apollo.dev/federation/v2.7",
       import: [
+        "@authenticated",
         "@extends",
         "@external",
         "@inaccessible",
         "@key",
         "@override",
+        "@policy",
         "@provides",
         "@requires",
+        "@requiresScopes",
         "@shareable",
         "@tag",
         "@composeDirective",

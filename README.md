@@ -318,19 +318,22 @@ defmodule Example.Schema do
 
 + extend schema do
 +   directive :link,
-+     url: "https://specs.apollo.dev/federation/v2.3",
++     url: "https://specs.apollo.dev/federation/v2.7",
 +     import: [
-+       "@key",
-+       "@shareable",
-+       "@provides",
-+       "@requires",
-+       "@external",
-+       "@tag",
-+       "@extends",
-+       "@override",
-+       "@inaccessible",
-+       "@composeDirective",
-+       "@interfaceObject"
+        "@authenticated",
+        "@extends",
+        "@external",
+        "@inaccessible",
+        "@key",
+        "@override",
+        "@policy",
+        "@provides",
+        "@requires",
+        "@requiresScopes",
+        "@shareable",
+        "@tag",
+        "@composeDirective",
+        "@interfaceObject"
 +     ]
 + end
 
