@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.0
+
+- Feature: [Support new federated directives](https://github.com/DivvyPayHQ/absinthe_federation/pull/109)
+  - Progressive `@override`
+  - `@authenticated`
+  - `@context`
+  - `@cost`
+  - `@listSize`
+  - `@policy`
+  - `@requiresScopes`
+
 ## 0.6.1
 
 - Bug Fix: [`@interfaceObject` entity resolution and SDL presence](https://github.com/DivvyPayHQ/absinthe_federation/pull/106)
