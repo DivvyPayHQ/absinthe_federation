@@ -280,6 +280,101 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
     end
   end
 
+  describe "resolver with batch" do
+    defmodule Widget do
+      defstruct [:id, :description]
+    end
+
+    defmodule Widgets do
+      def batch_query_widgets(_, ids) do
+        widget_data()
+        |> Enum.filter(& &1.id in ids)
+        |> Map.new(&{&1.id, &1})
+      end
+
+      defp widget_data() do
+        [
+          %Widget{
+            id: "1",
+            description: "A really great widget."
+          },
+          %Widget{
+            id: "2",
+            description: "Another good, but not great widget."
+          },
+          %Widget{
+            id: "3",
+            description: "This widget should not exist. Do not query it."
+          }
+        ]
+      end
+    end
+
+    defmodule BatchSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      import Absinthe.Resolution.Helpers, only: [batch: 3]
+
+      query do
+      end
+
+      object :widget do
+        key_fields("id")
+        field :id, non_null(:id)
+
+        field :description, :string
+
+        field :_resolve_reference, :widget do
+          resolve fn _, %{id: id}, _ ->
+            batch(
+              {Widgets, :batch_query_widgets},
+              id,
+              &{:ok, Map.get(&1, id)}
+            )
+          end
+        end
+      end
+    end
+
+    test "resolves federated entities with batch middleware" do
+      query = """
+        query {
+          _entities(representations: [
+            {
+              __typename: "Widget",
+              id: "1"
+            },
+            {
+              __typename: "Widget",
+              id: "1"
+            },
+            {
+              __typename: "Widget",
+              id: "2"
+            }
+          ]) {
+            ...on Widget {
+              id
+              description
+            }
+          }
+        }
+      """
+
+      assert {:ok,
+              %{
+                data: %{
+                  "_entities" => [
+                    %{"id" => "1", "description" => "A really great widget."},
+                    %{"id" => "1", "description" => "A really great widget."},
+                    %{"id" => "2", "description" => "Another good, but not great widget."}
+                  ]
+                }
+              }} = Absinthe.run(query, BatchSchema, variables: %{})
+    end
+  end
+
   describe "resolver with dataloader" do
     defmodule ResolveTypeSchema do
       use Absinthe.Schema
