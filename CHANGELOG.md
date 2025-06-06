@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1
+
+- Bug Fix: [Support Absinthe batcher in EntitiesField](https://github.com/DivvyPayHQ/absinthe_federation/pull/114)
+
 ## 0.7.0
 
 - Feature: [Support new federated directives](https://github.com/DivvyPayHQ/absinthe_federation/pull/109)
