@@ -94,6 +94,9 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     # Resolve representations first time
     resolution_acc = Enum.reduce(representations_to_resolve, resolution_acc, &resolve_field_representation/2)
 
+    # Run post-resolution plugins
+    resolution_acc = run_callbacks(resolution_acc.schema.plugins(), :after_resolution, resolution_acc)
+
     # If any representation fields are suspended (i.e async or dataloaded),
     # run the plugins and resolve_representation pipeline again.
     resolution_acc =
@@ -104,13 +107,13 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
           run_callbacks(resolution_acc.schema.plugins(), :before_resolution, resolution_acc)
           |> Map.put(:path, [])
 
-        Enum.reduce(representations_to_resolve, resolution_acc, &resolve_field_representation/2)
+        resolution_acc = Enum.reduce(representations_to_resolve, resolution_acc, &resolve_field_representation/2)
+
+        run_callbacks(resolution_acc.schema.plugins(), :after_resolution, resolution_acc)
       else
         resolution_acc
       end
 
-    # Run post-resolution plugins
-    resolution_acc = run_callbacks(resolution_acc.schema.plugins(), :after_resolution, resolution_acc)
     representations = resolution_acc.path
 
     # Collect values and errors
@@ -140,7 +143,7 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
       Map.put(res, :state, :resolved)
     else
       paths = Enum.map(res.path, &%{state: &1.state, value: &1.value, errors: &1.errors})
-      raise "Expected all fields to be resolved, but got: #{paths}"
+      raise "Expected all fields to be resolved, but got: #{inspect(paths)}"
     end
   end
 
