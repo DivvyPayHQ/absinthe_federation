@@ -288,7 +288,7 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
     defmodule Widgets do
       def batch_query_widgets(_, ids) do
         widget_data()
-        |> Enum.filter(& &1.id in ids)
+        |> Enum.filter(&(&1.id in ids))
         |> Map.new(&{&1.id, &1})
       end
 
