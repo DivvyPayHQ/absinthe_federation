@@ -27,7 +27,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
       field_definition = ServiceField.build()
 
       assert %NonNull{
-               of_type: :service
+               of_type: :_service
              } = field_definition.type
     end
 

@@ -19,7 +19,7 @@ defmodule Absinthe.Federation.Schema.ServiceField do
       module: __MODULE__,
       name: "_service",
       type: %NonNull{
-        of_type: :service
+        of_type: :_service
       },
       middleware: [{Absinthe.Resolution, &__MODULE__.resolver/3}]
     }
