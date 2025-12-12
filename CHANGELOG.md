@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0
+
+- **BREAKING**: [Rename `:service` and `:any` type identifiers to avoid conflicts](https://github.com/DivvyPayHQ/absinthe_federation/pull/117)
+  > This is a **breaking** change only if your code previously referenced the
+  > Absinthe Federation type identifiers `:service` or `:any` directly.
+  > For most users, there should be no impact.
+
 ## 0.7.1
 
 - Bug Fix: [Support Absinthe batcher in EntitiesField](https://github.com/DivvyPayHQ/absinthe_federation/pull/114)
