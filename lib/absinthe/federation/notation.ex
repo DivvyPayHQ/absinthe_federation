@@ -354,6 +354,7 @@ defmodule Absinthe.Federation.Notation do
 
   @doc """
   The `@tag` directive indicates whether to include or exclude the field/type from your contract schema.
+  This directive is repeatable — multiple tags can be applied to the same location.
 
   ## Example
 
@@ -363,6 +364,7 @@ defmodule Absinthe.Federation.Notation do
 
         field :ssn, :string do
           tag("internal")
+          tag("sensitive")
         end
       end
 
@@ -371,12 +373,12 @@ defmodule Absinthe.Federation.Notation do
 
       type User @key(fields: "id") {
         id: ID!
-        name: String @tag(name: "internal")
+        ssn: String @tag(name: "internal") @tag(name: "sensitive")
       }
   """
   defmacro tag(name) when is_binary(name) do
     quote do
-      meta :tag, unquote(name)
+      directive :tag, name: unquote(name)
     end
   end
 
