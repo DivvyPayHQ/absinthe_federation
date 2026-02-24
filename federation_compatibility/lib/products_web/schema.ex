@@ -67,7 +67,7 @@ defmodule ProductsWeb.Schema do
     variation: ProductVariation
     dimensions: ProductDimension
     createdBy: User @provides(fields: "totalProductsCreated")
-    notes: String @tag(name: "internal")
+    notes: String @tag(name: "important") @tag(name: "internal")
     research: [ProductResearch!]!
   }
   """
@@ -91,6 +91,7 @@ defmodule ProductsWeb.Schema do
 
     field :notes, :string do
       tag("internal")
+      tag("important")
     end
 
     field :research, non_null(list_of(non_null(:product_research))) do
@@ -352,7 +353,11 @@ defmodule ProductsWeb.Schema do
     {:ok, nil}
   end
 
-  defp resolve_deprecated_products_for_inventory(%{__typename: "Inventory"} = _parent, _args, _ctx) do
+  defp resolve_deprecated_products_for_inventory(
+         %{__typename: "Inventory"} = _parent,
+         _args,
+         _ctx
+       ) do
     {:ok, deprecated_products()}
   end
 

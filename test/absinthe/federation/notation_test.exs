@@ -29,6 +29,11 @@ defmodule Absinthe.Federation.NotationTest do
         field :id, non_null(:id) do
           external()
         end
+
+        field :name, :string do
+          tag("internal")
+          tag("other")
+        end
       end
     end
 
@@ -36,6 +41,8 @@ defmodule Absinthe.Federation.NotationTest do
       sdl = Absinthe.Schema.to_sdl(MacroSchema)
       assert sdl =~ "type User @extends @key(fields: \"id\")"
       assert sdl =~ "id: ID! @external"
+      # Test that repeated @tag directives work
+      assert sdl =~ ~r/name: String @tag\(name: "other"\) @tag\(name: "internal"\)/
     end
 
     test "can import federation 2 directives" do
