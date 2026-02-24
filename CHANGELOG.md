@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0
+
+- Bug Fix: [Allow `@tag` directive to be repeatable](https://github.com/DivvyPayHQ/absinthe_federation/pull/120)
+
+- **BREAKING**: Require [absinthe](https://github.com/absinthe-graphql/absinthe) v1.7.6 or later
+
 ## 0.8.0
 
 - **BREAKING**: [Rename `:service` and `:any` type identifiers to avoid conflicts](https://github.com/DivvyPayHQ/absinthe_federation/pull/117)
