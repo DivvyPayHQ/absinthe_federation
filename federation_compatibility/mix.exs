@@ -5,7 +5,7 @@ defmodule Products.MixProject do
     [
       app: :products,
       version: "0.1.0",
-      elixir: "~> 1.12",
+      elixir: "~> 1.15",
       elixirc_paths: ["lib"],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -23,7 +23,7 @@ defmodule Products.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.7.1"},
+      {:absinthe, "~> 1.7.6"},
       {:absinthe_federation, path: ".."},
       {:absinthe_plug, "~> 1.5"},
       {:phoenix, "~> 1.7"},

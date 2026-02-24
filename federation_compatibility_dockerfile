@@ -1,4 +1,4 @@
-FROM elixir:1.14.2-alpine AS build
+FROM elixir:1.15.8-alpine AS build
 ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /usr/local/share/ca-certificates/aws-rds.crt
 ADD https://mobile.zscaler.net/downloads/zscaler2048_sha256.crt /usr/local/share/ca-certificates/zscaler.crt
 RUN cat /usr/local/share/ca-certificates/*.crt >> /etc/ssl/certs/ca-certificates.crt
@@ -30,7 +30,7 @@ COPY federation_compatibility/lib lib
 RUN mix do compile, release
 
 # prepare release image
-FROM alpine:3.16 AS app
+FROM alpine:3.18 AS app
 ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /usr/local/share/ca-certificates/aws-rds.crt
 ADD https://mobile.zscaler.net/downloads/zscaler2048_sha256.crt /usr/local/share/ca-certificates/zscaler.crt
 RUN cat /usr/local/share/ca-certificates/*.crt >> /etc/ssl/certs/ca-certificates.crt
