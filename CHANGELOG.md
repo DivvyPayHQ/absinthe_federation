@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1
+
+- Bug Fix: [Fix absinthe dependency version for > v1.9.0](https://github.com/DivvyPayHQ/absinthe_federation/pull/122)
+
 ## 0.9.0
 
 - Bug Fix: [Allow `@tag` directive to be repeatable](https://github.com/DivvyPayHQ/absinthe_federation/pull/120)
