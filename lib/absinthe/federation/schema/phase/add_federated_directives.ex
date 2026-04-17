@@ -7,8 +7,6 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   alias Absinthe.Federation.Schema.Directive
   alias Absinthe.Type
 
-  @dialyzer {:nowarn_function, add_directive: 2}
-
   def run(%Blueprint{} = blueprint, _) do
     adapter = Map.get(blueprint, :adapter, LanguageConventions)
     blueprint = Blueprint.postwalk(blueprint, &collect_types(&1, adapter))
@@ -22,156 +20,80 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
 
   defp collect_types(node, _adapter), do: node
 
+  # Directive specs: {meta_key, directive_name, kind}
+  #   :flag        — only emit when meta value is `true`
+  #   {:value, arg} — emit with a single named argument: [{arg, value}]
+  #   :passthrough  — value is already a keyword list, pass directly
+  @directive_specs [
+    {:external, "external", :flag},
+    {:requires_fields, "requires", {:value, :fields}},
+    {:provides_fields, "provides", {:value, :fields}},
+    {:extends, "extends", :flag},
+    {:shareable, "shareable", :flag},
+    {:override_from, "override", :passthrough},
+    {:inaccessible, "inaccessible", :flag},
+    {:interface_object, "interface_object", :flag},
+    {:requires_scopes, "requires_scopes", {:value, :scopes}},
+    {:policies, "policy", {:value, :policies}},
+    {:authenticated, "authenticated", :flag},
+    {:context, "context", {:value, :name}},
+    {:list_size, "list_size", :passthrough},
+    {:cost, "cost", {:value, :weight}}
+  ]
+
   @spec maybe_add_directives(term(), any()) :: term()
   defp maybe_add_directives(node, meta) do
-    node
-    |> maybe_add_key_directive(meta)
-    |> maybe_add_external_directive(meta)
-    |> maybe_add_requires_directive(meta)
-    |> maybe_add_provides_directive(meta)
-    |> maybe_add_extends_directive(meta)
-    |> maybe_add_shareable_directive(meta)
-    |> maybe_add_override_directive(meta)
-    |> maybe_add_inaccessible_directive(meta)
-    |> maybe_add_interface_object_directive(meta)
-    |> maybe_add_requires_scopes_directive(meta)
-    |> maybe_add_policy_directive(meta)
-    |> maybe_add_authenticated_directive(meta)
-    |> maybe_add_context_directive(meta)
-    |> maybe_add_list_size_directive(meta)
-    |> maybe_add_cost_directive(meta)
+    adapter = Map.get(meta, :absinthe_adapter)
+
+    directives =
+      build_directives_from_specs(meta, adapter) ++
+        build_key_directives(meta, adapter)
+
+    case directives do
+      [] -> node
+      _ -> prepend_directives(node, directives)
+    end
   end
 
-  @spec maybe_add_key_directive(term(), map()) :: term()
-  defp maybe_add_key_directive(node, %{key_fields: fields, absinthe_adapter: adapter}) when is_binary(fields) do
-    directive = Directive.build("key", adapter, fields: fields)
-
-    add_directive(node, directive)
+  defp build_directives_from_specs(meta, adapter) do
+    @directive_specs
+    |> Enum.flat_map(&build_one(&1, meta, adapter))
+    |> Enum.reverse()
   end
 
-  defp maybe_add_key_directive(node, %{key_fields: fields, absinthe_adapter: adapter}) when is_list(fields) do
-    fields
-    |> Enum.map(&Directive.build("key", adapter, fields: &1))
-    |> Enum.reduce(node, &add_directive(&2, &1))
+  defp build_one({meta_key, name, :flag}, meta, adapter) do
+    if Map.get(meta, meta_key) == true,
+      do: [Directive.build(name, adapter)],
+      else: []
   end
 
-  defp maybe_add_key_directive(node, _meta), do: node
-
-  defp maybe_add_external_directive(node, %{external: true, absinthe_adapter: adapter}) do
-    directive = Directive.build("external", adapter)
-
-    add_directive(node, directive)
+  defp build_one({meta_key, name, {:value, arg}}, meta, adapter) do
+    case Map.fetch(meta, meta_key) do
+      {:ok, value} -> [Directive.build(name, adapter, [{arg, value}])]
+      :error -> []
+    end
   end
 
-  defp maybe_add_external_directive(node, _meta), do: node
-
-  defp maybe_add_requires_directive(node, %{requires_fields: fields, absinthe_adapter: adapter}) do
-    directive = Directive.build("requires", adapter, fields: fields)
-
-    add_directive(node, directive)
+  defp build_one({meta_key, name, :passthrough}, meta, adapter) do
+    case Map.fetch(meta, meta_key) do
+      {:ok, args} -> [Directive.build(name, adapter, args)]
+      :error -> []
+    end
   end
 
-  defp maybe_add_requires_directive(node, _meta), do: node
-
-  defp maybe_add_provides_directive(node, %{provides_fields: fields, absinthe_adapter: adapter}) do
-    directive = Directive.build("provides", adapter, fields: fields)
-
-    add_directive(node, directive)
+  defp build_key_directives(%{key_fields: fields} = meta, _adapter) when is_binary(fields) do
+    [Directive.build("key", Map.get(meta, :absinthe_adapter), fields: fields)]
   end
 
-  defp maybe_add_provides_directive(node, _meta), do: node
-
-  defp maybe_add_extends_directive(node, %{extends: true, absinthe_adapter: adapter}) do
-    directive = Directive.build("extends", adapter)
-
-    add_directive(node, directive)
+  defp build_key_directives(%{key_fields: fields} = meta, _adapter) when is_list(fields) do
+    Enum.map(fields, &Directive.build("key", Map.get(meta, :absinthe_adapter), fields: &1))
   end
 
-  defp maybe_add_extends_directive(node, _meta), do: node
+  defp build_key_directives(_meta, _adapter), do: []
 
-  defp maybe_add_requires_scopes_directive(node, %{requires_scopes: scopes, absinthe_adapter: adapter}) do
-    directive = Directive.build("requires_scopes", adapter, scopes: scopes)
-
-    add_directive(node, directive)
+  defp prepend_directives(%{directives: existing} = node, new_directives) do
+    %{node | directives: new_directives ++ existing}
   end
 
-  defp maybe_add_requires_scopes_directive(node, _meta), do: node
-
-  defp maybe_add_authenticated_directive(node, %{authenticated: true, absinthe_adapter: adapter}) do
-    directive = Directive.build("authenticated", adapter)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_authenticated_directive(node, _meta), do: node
-
-  defp maybe_add_policy_directive(node, %{policies: policies, absinthe_adapter: adapter}) do
-    directive = Directive.build("policy", adapter, policies: policies)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_policy_directive(node, _meta), do: node
-
-  defp maybe_add_context_directive(node, %{context: name, absinthe_adapter: adapter}) do
-    directive = Directive.build("context", adapter, name: name)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_context_directive(node, _meta), do: node
-
-  defp maybe_add_list_size_directive(node, %{list_size: args, absinthe_adapter: adapter}) do
-    directive = Directive.build("list_size", adapter, args)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_list_size_directive(node, _meta), do: node
-
-  defp maybe_add_cost_directive(node, %{cost: weight, absinthe_adapter: adapter}) do
-    directive = Directive.build("cost", adapter, weight: weight)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_cost_directive(node, _meta), do: node
-
-  defp maybe_add_shareable_directive(node, %{shareable: true, absinthe_adapter: adapter}) do
-    directive = Directive.build("shareable", adapter)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_shareable_directive(node, _meta), do: node
-
-  defp maybe_add_override_directive(node, %{override_from: args, absinthe_adapter: adapter}) do
-    directive = Directive.build("override", adapter, args)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_override_directive(node, _meta), do: node
-
-  defp maybe_add_inaccessible_directive(node, %{inaccessible: true, absinthe_adapter: adapter}) do
-    directive = Directive.build("inaccessible", adapter)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_inaccessible_directive(node, _meta), do: node
-
-  defp maybe_add_interface_object_directive(node, %{interface_object: true, absinthe_adapter: adapter}) do
-    directive = Directive.build("interface_object", adapter)
-
-    add_directive(node, directive)
-  end
-
-  defp maybe_add_interface_object_directive(node, _meta), do: node
-
-  defp add_directive(%{directives: directives} = node, directive) do
-    %{node | directives: [directive | directives]}
-  end
-
-  defp add_directive(node, _directive), do: node
+  defp prepend_directives(node, _directives), do: node
 end
