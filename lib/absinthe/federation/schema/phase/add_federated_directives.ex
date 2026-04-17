@@ -7,6 +7,8 @@ defmodule Absinthe.Federation.Schema.Phase.AddFederatedDirectives do
   alias Absinthe.Federation.Schema.Directive
   alias Absinthe.Type
 
+  @dialyzer {:nowarn_function, prepend_directives: 2}
+
   def run(%Blueprint{} = blueprint, _) do
     adapter = Map.get(blueprint, :adapter, LanguageConventions)
     blueprint = Blueprint.postwalk(blueprint, &collect_types(&1, adapter))
