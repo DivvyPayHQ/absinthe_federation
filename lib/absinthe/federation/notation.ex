@@ -555,7 +555,7 @@ defmodule Absinthe.Federation.Notation do
 
   @doc """
   The `@cacheTag` directive assigns cache tags to a field or type for use
-  with GraphOS Router's active cache invalidation feature (preview, Federation v2.12+).
+  with GraphOS Router's active cache invalidation feature (Federation v2.12+).
   The directive is repeatable — pass a list to apply multiple tags.
 
   ## Example

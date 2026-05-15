@@ -259,7 +259,7 @@ defmodule Absinthe.Federation.Schema.Prototype.FederatedDirectives do
       @desc """
       The @cacheTag directive assigns cache tags to fields or types to enable
       fine-grained cache invalidation via the GraphOS Router cache.
-      This is a preview feature available in Federation v2.12+.
+      Available in Federation v2.12+.
       """
       directive :cache_tag do
         arg :format, non_null(:string)
