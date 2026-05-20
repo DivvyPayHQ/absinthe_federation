@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2
+
+- Feature: [Support `@cacheTag` directive](https://github.com/DivvyPayHQ/absinthe_federation/pull/126)
+
 ## 0.9.1
 
 - Bug Fix: [Fix absinthe dependency version for > v1.9.0](https://github.com/DivvyPayHQ/absinthe_federation/pull/122)
