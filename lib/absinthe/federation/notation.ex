@@ -554,6 +554,42 @@ defmodule Absinthe.Federation.Notation do
   end
 
   @doc """
+  The `@cacheTag` directive assigns cache tags to a field or type for use
+  with GraphOS Router's active cache invalidation feature (Federation v2.12+).
+  The directive is repeatable — pass a list to apply multiple tags.
+
+  ## Example
+
+      object :product do
+        key_fields("id")
+        cache_tag("product-id")
+        field :id, non_null(:id)
+
+        field :price, :integer do
+          cache_tag(["price", "product-prices"])
+        end
+      end
+
+  ## SDL Output
+
+      type Product @cacheTag(format: "product-id") @key(fields: "id") {
+        id: ID!
+        price: Int @cacheTag(format: "price") @cacheTag(format: "product-prices")
+      }
+  """
+  defmacro cache_tag(format) when is_binary(format) do
+    quote do
+      meta :cache_tag, [unquote(format)]
+    end
+  end
+
+  defmacro cache_tag(formats) when is_list(formats) do
+    quote do
+      meta :cache_tag, unquote(formats)
+    end
+  end
+
+  @doc """
   The `@link` directive links definitions from an external specification to this schema.
   Every Federation 2 subgraph uses the `@link` directive to import the other federation-specific directives.
 

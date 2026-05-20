@@ -455,4 +455,36 @@ defmodule Absinthe.Federation.NotationTest do
 
     assert sdl =~ ~s{amount: Int @override(from: "Payments")}
   end
+
+  test "schema with cacheTag directive is valid" do
+    defmodule CacheTagSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      extend schema do
+        directive :link,
+          url: "https://specs.apollo.dev/federation/v2.12",
+          import: ["@cacheTag"]
+      end
+
+      query do
+        field :products, list_of(:product)
+      end
+
+      object :product do
+        key_fields("id")
+        cache_tag("product-id")
+        field :id, non_null(:id)
+
+        field :price, :integer do
+          cache_tag(["price", "product-prices"])
+        end
+      end
+    end
+
+    sdl = Absinthe.Schema.to_sdl(CacheTagSchema)
+
+    assert sdl =~ ~s{type Product @cacheTag(format: "product-id") @key(fields: "id")}
+    assert sdl =~ ~s{price: Int @cacheTag(format: "product-prices") @cacheTag(format: "price")}
+  end
 end
