@@ -34,7 +34,12 @@ defmodule Products.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get"]
+      setup: ["deps.get"],
+      "test.compatibility": [
+        "absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out schema.graphql",
+        "cmd npm install --silent",
+        "cmd cd .. && federation_compatibility/node_modules/.bin/fedtest docker --compose federation_compatibility_docker_compose.yml --schema federation_compatibility/schema.graphql --port 4001 --failOnRequired"
+      ]
     ]
   end
 

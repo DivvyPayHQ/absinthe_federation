@@ -9,3 +9,6 @@ erl_crash.dump
 
 # Generated GraphQL schema files
 schema.graphql
+
+# Dependencies for local compatibility test runner
+/node_modules/

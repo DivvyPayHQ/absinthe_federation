@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "devDependencies": {
+    "@apollo/federation-subgraph-compatibility": "3.0.1"
+  }
+}

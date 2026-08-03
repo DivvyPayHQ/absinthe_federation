@@ -16,6 +16,7 @@ defmodule Absinthe.Federation.MixProject do
       package: package(),
       docs: docs(),
       deps: deps(),
+      aliases: aliases(),
       dialyzer: [
         plt_add_apps: [:mix, :ex_unit],
         plt_local_path: "priv/plts/local",
@@ -67,6 +68,14 @@ defmodule Absinthe.Federation.MixProject do
       # Dev
       {:dialyxir, ">= 1.0.0", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.29", only: :dev, runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      "test.compatibility": [
+        "cmd cd federation_compatibility && mix deps.get && mix test.compatibility"
+      ]
     ]
   end
 end
