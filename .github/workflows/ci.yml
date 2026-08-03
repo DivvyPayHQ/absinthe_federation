@@ -139,7 +139,7 @@ jobs:
         working-directory: ./federation_compatibility
 
       - name: Test subgraph compatibility
-        uses: apollographql/federation-subgraph-compatibility@v2
+        uses: apollographql/federation-subgraph-compatibility@v3
         with:
           compose: "federation_compatibility_docker_compose.yml"
           schema: "federation_compatibility/schema.graphql"
