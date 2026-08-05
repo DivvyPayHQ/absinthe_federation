@@ -244,6 +244,10 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     end)
   end
 
+  defp convert_keys_to_atom(list, context) when is_list(list) do
+    Enum.map(list, &convert_keys_to_atom(&1, context))
+  end
+
   defp convert_keys_to_atom(v, _context), do: v
 
   defp convert_key(k, context) when is_binary(k) do

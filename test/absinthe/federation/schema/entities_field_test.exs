@@ -549,6 +549,58 @@ defmodule Absinthe.Federation.Schema.EntitiesFieldTest do
     end
   end
 
+  describe "resolver with list-valued fields" do
+    defmodule ListKeyResolverSchema do
+      use Absinthe.Schema
+      use Absinthe.Federation.Schema
+
+      query do
+        field :test, :string
+      end
+
+      object :widget do
+        key_fields("id")
+        field :id, non_null(:id)
+        field :tag_ids, list_of(:string)
+
+        field :_resolve_reference, :widget do
+          resolve(fn _, args, _ ->
+            # `tags` arrives as a list of maps; each map's keys must be atoms
+            # (e.g. :id) for this pattern match to succeed, same as a
+            # directly-nested map would be.
+            tag_ids = Enum.map(args.tags, & &1.id)
+            {:ok, %{id: args.id, tag_ids: tag_ids, __typename: "Widget"}}
+          end)
+        end
+      end
+    end
+
+    test "converts keys inside list values" do
+      query = """
+        query GetWidgets($representations: [_Any!]!) {
+          _entities(representations: $representations) {
+            ...on Widget {
+              id
+              tagIds
+            }
+          }
+        }
+      """
+
+      representations = [
+        %{
+          "__typename" => "Widget",
+          "id" => "1",
+          "tags" => [%{"id" => "a"}, %{"id" => "b"}]
+        }
+      ]
+
+      {:ok, resp} = Absinthe.run(query, ListKeyResolverSchema, variables: %{"representations" => representations})
+
+      assert %{data: %{"_entities" => [%{"id" => "1", "tagIds" => ["a", "b"]}]}} == resp
+    end
+  end
+
   describe "parent type with proper case" do
     defmodule SchemaWithLongKeyFieldName do
       use Absinthe.Schema
