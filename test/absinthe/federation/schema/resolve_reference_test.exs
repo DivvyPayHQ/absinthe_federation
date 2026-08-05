@@ -72,27 +72,17 @@ defmodule Absinthe.Federation.Schema.ResolveReferenceTest do
     end
   end
 
-  test "does not create new atoms for unknown representation keys" do
+  test "does not create an atom for an unknown representation key" do
     id = "8b89136b-85d7-4eb4-b8a3-608a7d078c5e"
+    unknown_key = "arbitrary_key_#{System.unique_integer([:positive])}"
 
-    representations = fn n ->
-      for i <- 1..n do
-        %{"id" => id, "__typename" => "HousePlant", "attacker_key_#{i}" => "x"}
-      end
-    end
+    options = [
+      variables: %{"representations" => [%{"id" => id, "__typename" => "HousePlant", unknown_key => "x"}]}
+    ]
 
-    # Warm up: run once to trigger any one-time lazy module loading first
-    {:ok, _warmup} = Absinthe.run(@query, TestSchema, variables: %{"representations" => representations.(1)})
+    {:ok, _result} = Absinthe.run(@query, TestSchema, options)
 
-    atom_count_before = :erlang.system_info(:atom_count)
-
-    {:ok, _result} = Absinthe.run(@query, TestSchema, variables: %{"representations" => representations.(2_000)})
-
-    atom_count_after = :erlang.system_info(:atom_count)
-
-    # Loose assertion due to possible lazy loading while running the full test suite
-    # If the code created non-existent atoms this would cause >= 2000 difference
-    assert atom_count_after - atom_count_before < 99
+    assert_raise ArgumentError, ~r/not an already existing atom/, fn -> String.to_existing_atom(unknown_key) end
   end
 
   test "unknown representation keys do not prevent resolution" do

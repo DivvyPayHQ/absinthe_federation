@@ -60,6 +60,20 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
 end
 
 defprotocol Absinthe.Federation.Schema.EntityUnion.Resolver do
+  @moduledoc """
+  Resolves the `_Entity` union type for a value returned from `_resolve_reference`.
+
+  The default implementation matches a struct to a schema object type by struct
+  module name. The last segment of the module name must equal the object type's
+  name. If your struct's module name doesn't match any object type in your
+  schema, implement this protocol directly on the struct to return the type
+  identifier explicitly:
+
+      defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
+        def resolve_type(_entity, _resolution), do: :my_schema_object_name
+      end
+  """
+
   @fallback_to_any true
   def resolve_type(map, resolution)
 end
