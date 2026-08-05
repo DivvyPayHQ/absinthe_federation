@@ -233,26 +233,37 @@ defmodule Absinthe.Federation.Schema.EntitiesField do
     end
   end
 
-  defp convert_keys_to_atom(map, context) when is_map(map) do
+  # Representation keys come from the open-ended `_Any` scalar, i.e. arbitrary
+  # client-supplied strings that bypass schema coercion. We only use atoms that
+  # already exist since every field of every type in the schema is an atom at
+  # compile time, so legitimate keys always convert.
+  # Unknown keys stay strings instead of being dropped.
+  defp convert_keys_to_atom(map, context) when is_map(map) and not is_struct(map) do
     Map.new(map, fn {k, v} ->
-      k = convert_key(k, context)
-      v = convert_keys_to_atom(v, context)
-      {k, v}
+      {convert_key(k, context), convert_keys_to_atom(v, context)}
     end)
   end
 
   defp convert_keys_to_atom(v, _context), do: v
 
-  defp convert_key(k, context) do
-    adapter = Map.get(context, :adapter, LanguageConventions)
+  defp convert_key(k, context) when is_binary(k) do
+    adapter = Map.get(context, :adapter) || LanguageConventions
 
-    if adapter_has_to_internal_name_modifier?(adapter) do
-      adapter.to_internal_name(k, :field)
-    else
-      k
+    name =
+      if adapter_has_to_internal_name_modifier?(adapter) do
+        adapter.to_internal_name(k, :field)
+      else
+        k
+      end
+
+    try do
+      String.to_existing_atom(name)
+    rescue
+      ArgumentError -> k
     end
-    |> String.to_atom()
   end
+
+  defp convert_key(k, _context), do: k
 
   defp run_callbacks(plugins, callback, acc) do
     Enum.reduce(plugins, acc, &apply(&1, callback, [&2]))
