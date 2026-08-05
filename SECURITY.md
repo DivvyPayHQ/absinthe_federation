@@ -9,20 +9,12 @@
 
 ## Reporting a Vulnerability
 
-This repository is maintained by [BILL](https://www.bill.com/).
+If you find a security vulnerability in this project, please report it through GitHub's private vulnerability reporting feature:
 
-If you discover a security vulnerability in this project, please report it through our Vulnerability Disclosure Program (VDP) on HackerOne:
+**https://github.com/DivvyPayHQ/absinthe_federation/security/advisories/new**
 
-**https://hackerone.com/bill_vdp**
+Do not report security vulnerabilities through public GitHub issues.
 
-Please do not report security vulnerabilities through public GitHub issues.
+Our contributors will review and handle these reports.
 
-## What to Expect
-
-When you submit a report through our HackerOne VDP, the BILL security team will:
-
-1. Acknowledge receipt of your report
-2. Investigate and validate the issue
-3. Work on a fix and coordinate disclosure
-
-Thank you for helping keep this project and our users safe.
+Thank you for helping keep this project and its users safe.
