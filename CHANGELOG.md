@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **BREAKING**: [Raise when an entity's struct name matches no schema type](https://github.com/DivvyPayHQ/absinthe_federation/pull/134)
+  > The `_Entity` union now checks that the derived name is a type in the schema first, and if it's not, it raises a
+  > message naming the struct and the derived name, pointing at the `EntityUnion.Resolver` protocol. Previously, the
+  > entity union silently returned an empty map in such cases.
+
 ## 0.9.3
 
 - Security: [Fix atom exhaustion denial of service in `_entities`](https://github.com/DivvyPayHQ/absinthe_federation/pull/133)

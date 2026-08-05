@@ -60,6 +60,23 @@ defmodule Absinthe.Federation.Schema.EntityUnion do
 end
 
 defprotocol Absinthe.Federation.Schema.EntityUnion.Resolver do
+  @moduledoc """
+  Resolves the `_Entity` union type for a value returned from `_resolve_reference`.
+
+  The default implementation matches a struct to a schema object type by struct
+  module name. The last segment of the module name must equal the object type's
+  name. If your struct's module name doesn't match any object type in your
+  schema, implement this protocol directly on the struct to return the type
+  identifier explicitly:
+
+      defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
+        def resolve_type(_entity, _resolution), do: :my_schema_object_name
+      end
+
+  When the derived name matches no type in the schema, resolution fails with an
+  error naming the struct and the derived name.
+  """
+
   @fallback_to_any true
   def resolve_type(map, resolution)
 end
@@ -73,18 +90,18 @@ defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
       |> Module.split()
       |> List.last()
 
-    inner_resolve_type(data, typename, resolution)
+    inner_resolve_type(data, typename, resolution, struct_name)
   end
 
   def resolve_type(%{__typename: typename} = data, resolution) do
-    inner_resolve_type(data, typename, resolution)
+    inner_resolve_type(data, typename, resolution, nil)
   end
 
   def resolve_type(%{"__typename" => typename} = data, resolution) do
-    inner_resolve_type(data, typename, resolution)
+    inner_resolve_type(data, typename, resolution, nil)
   end
 
-  defp inner_resolve_type(data, typename, resolution) do
+  defp inner_resolve_type(data, typename, resolution, struct_name) do
     type = Absinthe.Schema.lookup_type(resolution.schema, typename)
 
     case type do
@@ -92,9 +109,26 @@ defimpl Absinthe.Federation.Schema.EntityUnion.Resolver, for: Any do
         resolver = Absinthe.Type.function(type, :resolve_type)
         resolver.(data, resolution)
 
+      nil ->
+        # Absinthe's union resolve_type contract only allows an atom or nil, so we can't return an error tuple here.
+        # Returning nil would silently resolve the entity to an empty map, so raise with an error message.
+        raise unresolvable_type_message(typename, struct_name)
+
       _type ->
         to_internal_name(typename, resolution.adapter)
     end
+  end
+
+  defp unresolvable_type_message(typename, nil) do
+    "The _Entity union could not resolve a type for the value returned by _resolve_reference: " <>
+      "\"#{typename}\" is not a type in this schema."
+  end
+
+  defp unresolvable_type_message(typename, struct_name) do
+    "The _Entity union could not resolve a type for %#{inspect(struct_name)}{}: " <>
+      "the derived type name \"#{typename}\" is not a type in this schema. " <>
+      "Either rename the struct so its last module segment matches the object type name, " <>
+      "or implement Absinthe.Federation.Schema.EntityUnion.Resolver for #{inspect(struct_name)}."
   end
 
   defp to_internal_name(name, adapter) when is_nil(adapter) do

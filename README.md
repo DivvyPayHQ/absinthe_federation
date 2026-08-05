@@ -291,7 +291,9 @@ end
 
 ### Resolving structs in \_entities queries
 
-If you need to resolve your struct to a specific type in your schema you can implement the `Absinthe.Federation.Schema.EntityUnion.Resolver` protocol like this:
+By default, when a `_resolve_reference` field returns a struct, the library resolves the `_Entity` union by matching the last segment of the struct's module name against your schema's object type names. If your struct's module name does not match a type name in your schema, resolution raises an error that names the struct and the derived type name.
+
+If you need to resolve your struct to a specific type in your schema, implement the `Absinthe.Federation.Schema.EntityUnion.Resolver` protocol like this:
 
 ```elixir
 defmodule MySchema do
@@ -302,7 +304,7 @@ defmodule MySchema do
   defstruct id: ""
 
   defimpl Absinthe.Federation.Schema.EntityUnion.Resolver do
-    def resolve_type(_, _), do: :my_schema_object_name
+    def resolve_type(_entity, _resolution), do: :my_schema_object_name
   end
 end
 ```
