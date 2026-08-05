@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.3
+
+- Security: [Fix atom exhaustion denial of service in `_entities`](https://github.com/DivvyPayHQ/absinthe_federation/pull/133)
+  > `_entities` representation keys were converted with `String.to_atom/1`.
+  > A client could send arbitrary unique keys and exhaust the BEAM atom table.
+  > Keys now resolve with `String.to_existing_atom/1` and keys that match no
+  > existing atom pass through as strings instead of being converted.
+  > Also fixes structs in representations being flattened into plain maps.
+
 ## 0.9.2
 
 - Feature: [Support `@cacheTag` directive](https://github.com/DivvyPayHQ/absinthe_federation/pull/126)
