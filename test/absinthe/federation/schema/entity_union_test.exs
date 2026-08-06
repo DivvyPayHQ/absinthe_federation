@@ -79,6 +79,15 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
           resolve(fn _, %{item_id: item_id}, _ -> {:ok, %SpecItem{item_id: item_id}} end)
         end
       end
+
+      object :mismatched_struct_owner do
+        key_fields("id")
+        field :id, :string
+
+        field :_resolve_reference, :mismatched_struct_owner do
+          resolve(fn _, %{id: id}, _ -> {:ok, %Absinthe.Federation.Fixtures.Unmatched{id: id}} end)
+        end
+      end
     end
 
     test "correct object type returned" do
@@ -122,6 +131,24 @@ defmodule Absinthe.Federation.Schema.EntityUnionTest do
                data: nil,
                errors: [%{locations: [%{column: 5, line: 2}], message: "ID doesn't exist 1", path: ["_entities"]}]
              } = Absinthe.run!(query, ResolveTypeSchema)
+    end
+
+    test "errors when a struct's module name matches no schema type" do
+      query = """
+        {
+          _entities(representations: [{__typename: "MismatchedStructOwner", id: "1"}]) {
+            ...on MismatchedStructOwner {
+              id
+            }
+          }
+        }
+      """
+
+      %RuntimeError{message: message} = assert_raise RuntimeError, fn -> Absinthe.run(query, ResolveTypeSchema) end
+
+      assert message =~ "Absinthe.Federation.Fixtures.Unmatched"
+      assert message =~ "derived type name \"Unmatched\" is not a type in this schema"
+      assert message =~ "Absinthe.Federation.Schema.EntityUnion.Resolver"
     end
   end
 
