@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+
+- **BREAKING**: [Convert `_entities` representation keys nested in lists to atoms](https://github.com/DivvyPayHQ/absinthe_federation/pull/135)
+
+  > Previously, a map inside a list-typed representation field (e.g. a
+  > list-shaped `@key` field) kept string keys after conversion, while a map
+  > nested directly under another map already converted to atom keys. This
+  > was an inconsistency and now nested keys will also be converted as long as
+  > they are existing atoms.
+  > If your `_resolve_reference` resolver pattern-matches on string keys for a
+  > list-nested representation field, update it to match atom keys instead.
+  >
+  > Example before:
+  >
+  > ```elixir
+  > def resolver_function(_, args, _) do
+  >   tag_ids = Enum.map(args.tags, & Map.get(&1, "id"))
+  >   {:ok, %{id: args.id, tag_ids: tag_ids, __typename: "Widget"}}
+  > end
+  > ```
+  >
+  > After:
+  >
+  > ```elixir
+  > def resolver_function(_, args, _) do
+  >   tag_ids = Enum.map(args.tags, & &1.id)
+  >   {:ok, %{id: args.id, tag_ids: tag_ids, __typename: "Widget"}}
+  > end
+  > ```
+
 ## 0.9.3
 
 - Security: [Fix atom exhaustion denial of service in `_entities`](https://github.com/DivvyPayHQ/absinthe_federation/pull/133)
