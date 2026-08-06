@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **BREAKING**: [Raise when an entity's struct name matches no schema type](https://github.com/DivvyPayHQ/absinthe_federation/pull/134)
+- **BREAKING**: [Raise when an entity's struct name matches no schema type](https://github.com/DivvyPayHQ/absinthe_federation/pull/136)
 
   > The `_Entity` union now checks that the derived name is a type in the schema first, and if it's not, it raises a
   > message naming the struct and the derived name, pointing at the `EntityUnion.Resolver` protocol. Previously, the
