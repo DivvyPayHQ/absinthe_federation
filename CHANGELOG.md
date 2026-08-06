@@ -3,9 +3,38 @@
 ## Unreleased
 
 - **BREAKING**: [Raise when an entity's struct name matches no schema type](https://github.com/DivvyPayHQ/absinthe_federation/pull/134)
+
   > The `_Entity` union now checks that the derived name is a type in the schema first, and if it's not, it raises a
   > message naming the struct and the derived name, pointing at the `EntityUnion.Resolver` protocol. Previously, the
   > entity union silently returned an empty map in such cases.
+
+- **BREAKING**: [Convert `_entities` representation keys nested in lists to atoms](https://github.com/DivvyPayHQ/absinthe_federation/pull/135)
+
+  > Previously, a map inside a list-typed representation field (e.g. a
+  > list-shaped `@key` field) kept string keys after conversion, while a map
+  > nested directly under another map already converted to atom keys. This
+  > was an inconsistency and now nested keys will also be converted as long as
+  > they are existing atoms.
+  > If your `_resolve_reference` resolver pattern-matches on string keys for a
+  > list-nested representation field, update it to match atom keys instead.
+  >
+  > Example before:
+  >
+  > ```elixir
+  > def resolver_function(_, args, _) do
+  >   tag_ids = Enum.map(args.tags, & Map.get(&1, "id"))
+  >   {:ok, %{id: args.id, tag_ids: tag_ids, __typename: "Widget"}}
+  > end
+  > ```
+  >
+  > After:
+  >
+  > ```elixir
+  > def resolver_function(_, args, _) do
+  >   tag_ids = Enum.map(args.tags, & &1.id)
+  >   {:ok, %{id: args.id, tag_ids: tag_ids, __typename: "Widget"}}
+  > end
+  > ```
 
 ## 0.9.3
 
