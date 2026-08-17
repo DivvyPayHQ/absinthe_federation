@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **BREAKING**: [Raise when an entity's struct name matches no schema type](https://github.com/DivvyPayHQ/absinthe_federation/pull/136)
+
+  > The `_Entity` union now checks that the derived name is a type in the schema first, and if it's not, it raises a
+  > message naming the struct and the derived name, pointing at the `EntityUnion.Resolver` protocol. Previously, the
+  > entity union silently returned an empty map in such cases.
+
 - **BREAKING**: [Convert `_entities` representation keys nested in lists to atoms](https://github.com/DivvyPayHQ/absinthe_federation/pull/135)
 
   > Previously, a map inside a list-typed representation field (e.g. a
