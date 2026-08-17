@@ -128,17 +128,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Build products image and extract compatibility schema
+      - name: Set up Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+
+      - name: Restore deps cache
+        uses: actions/cache@v6
+        with:
+          path: deps
+          key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+      - name: Restore _build cache
+        uses: actions/cache@v6
+        with:
+          path: _build
+          key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-
+
+      - name: Print federation compatibility schema
         run: |
-          docker buildx build \
-            --target build \
-            --tag absinthe_federation-products-build:latest \
-            --load \
-            -f federation_compatibility_dockerfile \
-            .
-          docker create --name schema-extract absinthe_federation-products-build:latest
-          docker cp schema-extract:/tmp/schema.graphql federation_compatibility/schema.graphql
-          docker rm schema-extract
+          mix deps.get
+          mix absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out schema.graphql
+        working-directory: ./federation_compatibility
 
       - name: Test subgraph compatibility
         uses: apollographql/federation-subgraph-compatibility@v3
@@ -149,4 +165,3 @@ jobs:
           port: 4001
           failOnWarning: false
           failOnRequired: true
-          debug: true
