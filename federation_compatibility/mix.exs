@@ -23,7 +23,7 @@ defmodule Products.MixProject do
 
   defp deps do
     [
-      {:absinthe, "~> 1.7.6"},
+      {:absinthe, "~> 1.11"},
       {:absinthe_federation, path: ".."},
       {:absinthe_plug, "~> 1.5"},
       {:phoenix, "~> 1.7"},

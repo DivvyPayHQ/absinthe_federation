@@ -1,5 +1,13 @@
 defmodule Absinthe.Federation.Schema.Phase.RemoveResolveReferenceFields do
-  @moduledoc false
+  @moduledoc """
+  Deletes `_resolve_reference` fields from the blueprint used to render the
+  federated SDL (`_service { sdl }`, `to_federated_sdl/1`). That blueprint is
+  discarded after rendering, so deleting the field is safe here.
+
+  This is different than the `HideResolveReferenceFields` phase, which runs in
+  the live compile-time pipeline and renames (never deletes) the field, since
+  deleting it there would break `_entities` resolution.
+  """
 
   use Absinthe.Phase
 

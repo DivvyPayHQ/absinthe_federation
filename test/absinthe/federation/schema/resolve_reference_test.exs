@@ -85,6 +85,37 @@ defmodule Absinthe.Federation.Schema.ResolveReferenceTest do
     assert_raise ArgumentError, ~r/not an already existing atom/, fn -> String.to_existing_atom(unknown_key) end
   end
 
+  test "_resolve_reference is hidden from introspection" do
+    query = """
+      {
+        __type(name: "HousePlant") {
+          fields {
+            name
+          }
+        }
+      }
+    """
+
+    assert {:ok, %{data: %{"__type" => %{"fields" => fields}}}} = Absinthe.run(query, TestSchema)
+
+    refute Enum.any?(fields, &(&1["name"] == "_resolveReference"))
+    assert Enum.map(fields, & &1["name"]) |> Enum.sort() == ["id", "name", "waterInterval"]
+  end
+
+  test "_resolve_reference cannot be queried directly" do
+    query = "{ __resolve_reference { id } }"
+
+    assert {:ok, %{errors: [%{message: message}]}} = Absinthe.run(query, TestSchema)
+    assert message =~ "Cannot query field"
+  end
+
+  test "_resolve_reference is still removed from the federated SDL" do
+    sdl = Absinthe.Federation.Schema.to_federated_sdl(TestSchema)
+
+    refute sdl =~ "resolveReference"
+    refute sdl =~ "resolve_reference"
+  end
+
   test "unknown representation keys do not prevent resolution" do
     id = "8b89136b-85d7-4eb4-b8a3-608a7d078c5e"
 
