@@ -11,64 +11,78 @@ on:
 permissions:
   pull-requests: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   unit_tests:
     name: Unit tests Elixir ${{matrix.elixir}} / OTP ${{matrix.otp}}
     runs-on: ubuntu-24.04
 
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - elixir: "1.15"
+          - elixir: "1.20"
+            otp: "29"
+          - elixir: "1.19"
+            otp: "28"
+          - elixir: "1.18"
+            otp: "27"
+          - elixir: "1.17"
+            otp: "27"
+          - elixir: "1.16"
             otp: "26"
           - elixir: "1.15"
-            otp: "25"
-          - elixir: "1.15"
-            otp: "24"
+            otp: "26"
           - elixir: "1.14"
             otp: "25"
-          - elixir: "1.14"
-            otp: "24"
           - elixir: "1.13"
             otp: "25"
-          - elixir: "1.13"
-            otp: "24"
           - elixir: "1.12"
             otp: "24"
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Elixir
-        uses: erlef/setup-elixir@v1
+        uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
 
       - name: Restore deps cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Restore _build cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: _build
           key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Restore plt cache
-        if: ${{ matrix.otp == '25' && matrix.elixir == '1.14' }}
-        uses: actions/cache@v3
+        if: ${{ matrix.otp == '29' && matrix.elixir == '1.20' }}
+        uses: actions/cache@v4
         with:
           path: priv/plts
-          key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          key: ${{ runner.os }}-plt-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-plt-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Install deps
         run: mix deps.get
 
       - name: Check Formatting
+        if: ${{ matrix.otp == '29' && matrix.elixir == '1.20' }}
         run: mix format --check-formatted
 
       - name: Run unit tests
@@ -84,7 +98,7 @@ jobs:
           SCHEMA_PROVIDER: persistent_term
 
       - name: Run dialyzer
-        if: ${{ matrix.otp == '25' && matrix.elixir == '1.14' }}
+        if: ${{ matrix.otp == '29' && matrix.elixir == '1.20' }}
         run: |
           mkdir -p priv/plts/{local,core}
           MIX_ENV=test mix dialyzer
@@ -96,8 +110,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - elixir: "1.15"
-            otp: "26"
+          - elixir: "1.20"
+            otp: "29"
 
     steps:
       - name: Save action secrets
@@ -112,25 +126,29 @@ jobs:
           IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Elixir
-        uses: erlef/setup-elixir@v1
+        uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
 
       - name: Restore deps cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Restore _build cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: _build
           key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Print federation compatibility schema
         run: |

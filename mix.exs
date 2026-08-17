@@ -74,7 +74,7 @@ defmodule Absinthe.Federation.MixProject do
   defp aliases do
     [
       "test.compatibility": [
-        "cmd cd federation_compatibility && mix deps.get && mix test.compatibility"
+        "cmd --shell cd federation_compatibility && mix deps.get && mix test.compatibility"
       ]
     ]
   end
