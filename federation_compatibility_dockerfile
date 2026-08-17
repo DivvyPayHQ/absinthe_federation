@@ -23,16 +23,12 @@ COPY federation_compatibility/mix.exs federation_compatibility/mix.lock ./
 COPY federation_compatibility/config config
 ENV SECRET_KEY_BASE=yORg910Gzl54nSsy1HQ1OkKh0sDIj+0eKcSCdt/nyLSl25q41t4Uayqr8BZHSJrI
 
-RUN mix do deps.get, deps.compile
+RUN mix do deps.get + deps.compile
 
 # compile and build release
 COPY federation_compatibility/lib lib
-RUN mix do compile, release
+RUN mix do compile + release
 RUN mix absinthe.federation.schema.sdl --schema ProductsWeb.Schema --out /tmp/schema.graphql
-
-# schema.graphql, exported via `docker build --target schema-export --output`
-FROM scratch AS schema-export
-COPY --from=build /tmp/schema.graphql /schema.graphql
 
 # prepare release image
 FROM alpine:3.24 AS app

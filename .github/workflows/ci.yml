@@ -128,13 +128,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Extract federation compatibility schema
+      - name: Build products image and extract compatibility schema
         run: |
           docker buildx build \
-            --target schema-export \
-            --output type=local,dest=./federation_compatibility \
+            --target build \
+            --tag absinthe_federation-products-build:latest \
+            --load \
             -f federation_compatibility_dockerfile \
             .
+          docker create --name schema-extract absinthe_federation-products-build:latest
+          docker cp schema-extract:/tmp/schema.graphql federation_compatibility/schema.graphql
+          docker rm schema-extract
 
       - name: Test subgraph compatibility
         uses: apollographql/federation-subgraph-compatibility@v3
