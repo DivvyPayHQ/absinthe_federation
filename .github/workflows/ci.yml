@@ -45,7 +45,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
@@ -54,7 +54,7 @@ jobs:
           otp-version: ${{ matrix.otp }}
 
       - name: Restore deps cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
@@ -62,7 +62,7 @@ jobs:
             ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Restore _build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build
           key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
@@ -71,7 +71,7 @@ jobs:
 
       - name: Restore plt cache
         if: ${{ matrix.otp == '29' && matrix.elixir == '1.20' }}
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: priv/plts
           key: ${{ runner.os }}-plt-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
@@ -126,7 +126,7 @@ jobs:
           IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Elixir
         uses: erlef/setup-beam@v1
@@ -135,7 +135,7 @@ jobs:
           otp-version: ${{ matrix.otp }}
 
       - name: Restore deps cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: deps
           key: ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
@@ -143,7 +143,7 @@ jobs:
             ${{ runner.os }}-mix-${{ matrix.otp }}-${{ matrix.elixir }}-
 
       - name: Restore _build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: _build
           key: ${{ runner.os }}-build-${{ matrix.otp }}-${{ matrix.elixir }}-${{ hashFiles('**/mix.lock') }}
