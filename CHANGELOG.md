@@ -36,6 +36,8 @@
   > end
   > ```
 
+- Bug Fix: [Hide `_resolveReference` field from introspection](https://github.com/DivvyPayHQ/absinthe_federation/pull/137)
+
 ## 0.9.3
 
 - Security: [Fix atom exhaustion denial of service in `_entities`](https://github.com/DivvyPayHQ/absinthe_federation/pull/133)
