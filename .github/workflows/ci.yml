@@ -165,4 +165,3 @@ jobs:
           port: 4001
           failOnWarning: false
           failOnRequired: true
-          debug: true
