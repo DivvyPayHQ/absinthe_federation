@@ -107,6 +107,7 @@ defmodule Absinthe.Federation.Schema.ServiceFieldTest do
         key_fields(["id", "email", "secondary_id"])
         field :id, non_null(:id)
         field :email, non_null(:string)
+        field :secondary_id, non_null(:id)
         field :address, non_null(:address)
 
         field :_resolve_reference, :user do

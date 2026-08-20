@@ -8,60 +8,64 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
   """
   def run(bp, _) do
     adapter = bp.adapter || Absinthe.Adapter.LanguageConventions
-    bp = Blueprint.prewalk(bp, &handle_schemas(&1, adapter))
+    bp = Blueprint.prewalk(bp, &handle_schemas(&1, adapter, bp))
     {:ok, bp}
   end
 
-  defp handle_schemas(%Blueprint.Schema.SchemaDefinition{} = schema, adapter) do
-    schema = Blueprint.prewalk(schema, &validate_object(&1, adapter))
+  defp handle_schemas(%Blueprint.Schema.SchemaDefinition{} = schema, adapter, bp) do
+    schema = Blueprint.prewalk(schema, &validate_object(&1, adapter, bp))
     {:halt, schema}
   end
 
-  defp handle_schemas(obj, _adapter) do
+  defp handle_schemas(obj, _adapter, _bp) do
     obj
   end
 
-  defp validate_object(%Blueprint.Schema.ObjectTypeDefinition{} = object, adapter) do
+  defp validate_object(%Blueprint.Schema.ObjectTypeDefinition{} = object, adapter, bp) do
     case is_defining_or_extending?(object) do
       false ->
         object
 
       true ->
         key_fields = get_in(object.__private__, [:meta, :key_fields])
-        validate_key_fields(key_fields, object, adapter)
+        validate_key_fields(key_fields, object, adapter, bp)
     end
   end
 
-  defp validate_object(obj, _adapter) do
+  defp validate_object(obj, _adapter, _bp) do
     obj
   end
 
-  defp validate_key_fields(key_fields, object, adapter) when is_list(key_fields) do
-    Enum.reduce(key_fields, object, fn x, acc -> validate_key_fields(x, acc, adapter) end)
+  defp validate_key_fields(key_fields, object, adapter, bp) when is_list(key_fields) do
+    Enum.reduce(key_fields, object, fn x, acc -> validate_key_fields(x, acc, adapter, bp) end)
   end
 
-  defp validate_key_fields(key_fields, object, adapter) when is_binary(key_fields) do
-    with true <- is_nested?(key_fields),
-         {:ok, nested_key_selections} <- parse_key_fields(key_fields) do
-      validate_nested_key(nested_key_selections, object, object, key_fields, adapter)
-    else
-      false ->
-        if key_fields |> in?(object.fields, adapter) do
+  defp validate_key_fields(key_fields, object, adapter, bp) when is_binary(key_fields) do
+    # A key fieldset is always parsed as a selection set, so that a single field ("sku"), a
+    # compound key ("sku package") and a nested key ("sku variation { id }") are all handled the
+    # same way. Leaf selections are checked against the object's fields; selections with a
+    # sub-selection recurse into the referenced type.
+    case parse_key_fields(key_fields) do
+      {:ok, [%{selection_set: nil, name: key}]} ->
+        if in?(key, object.fields, adapter) do
           object
         else
-          Absinthe.Phase.put_error(object, error(key_fields, object))
+          Absinthe.Phase.put_error(object, error(key, object))
         end
 
-      _ ->
+      {:ok, key_selections} ->
+        validate_nested_key(key_selections, object, object, key_fields, adapter, bp)
+
+      _error ->
         Absinthe.Phase.put_error(object, syntax_error(key_fields, object))
     end
   end
 
-  defp validate_nested_key(selections, ancestor, object, key_fields, adapter) when is_list(selections) do
-    Enum.reduce(selections, ancestor, fn x, acc -> validate_nested_key(x, acc, object, key_fields, adapter) end)
+  defp validate_nested_key(selections, ancestor, object, key_fields, adapter, bp) when is_list(selections) do
+    Enum.reduce(selections, ancestor, fn x, acc -> validate_nested_key(x, acc, object, key_fields, adapter, bp) end)
   end
 
-  defp validate_nested_key(%{selection_set: nil, name: key}, ancestor, object, key_fields, adapter) do
+  defp validate_nested_key(%{selection_set: nil, name: key}, ancestor, object, key_fields, adapter, _bp) do
     if key |> in?(object.fields, adapter) do
       ancestor
     else
@@ -69,15 +73,34 @@ defmodule Absinthe.Federation.Schema.Phase.Validation.KeyFieldsMustExist do
     end
   end
 
-  defp validate_nested_key(selection, ancestor, object, key_fields, adapter) do
-    bp = ancestor.module.__absinthe_blueprint__()
-    field = Enum.find(object.fields, fn x -> x.name == selection.name end)
-    object = field && Absinthe.Blueprint.Schema.lookup_type(bp, field.type.of_type)
+  defp validate_nested_key(selection, ancestor, object, key_fields, adapter, bp) do
+    internal_name = adapter.to_internal_name(selection.name, :field)
+    field = Enum.find(object.fields, fn x -> x.name == internal_name end)
 
-    if object do
-      validate_nested_key(selection.selection_set.selections, ancestor, object, key_fields, adapter)
-    else
-      Absinthe.Phase.put_error(ancestor, no_object_error(key_fields, ancestor, selection.name))
+    cond do
+      is_nil(field) ->
+        Absinthe.Phase.put_error(ancestor, no_object_error(key_fields, ancestor, selection.name))
+
+      true ->
+        case Absinthe.Blueprint.Schema.lookup_type(bp, unwrap_named_type(field.type)) do
+          %Blueprint.Schema.ObjectTypeDefinition{} = nested ->
+            validate_nested_key(selection.selection_set.selections, ancestor, nested, key_fields, adapter, bp)
+
+          %Blueprint.Schema.InterfaceTypeDefinition{} ->
+            Absinthe.Phase.put_error(
+              ancestor,
+              invalid_type_error(key_fields, ancestor, selection.name, "an interface type")
+            )
+
+          %Blueprint.Schema.UnionTypeDefinition{} ->
+            Absinthe.Phase.put_error(
+              ancestor,
+              invalid_type_error(key_fields, ancestor, selection.name, "a union type")
+            )
+
+          _other_type ->
+            Absinthe.Phase.put_error(ancestor, no_object_error(key_fields, ancestor, selection.name))
+        end
     end
   end
 
