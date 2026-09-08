@@ -15,6 +15,7 @@ defmodule Absinthe.Federation.Schema do
   """
 
   alias Absinthe.Federation.Schema.Prototype, as: FederationPrototype
+  alias Absinthe.Phase.Schema.FieldImports
   alias Absinthe.Phase.Schema.TypeImports
   alias Absinthe.Pipeline
 
@@ -57,12 +58,14 @@ defmodule Absinthe.Federation.Schema do
   Injects custom compile-time `Absinthe.Phase`
   """
   def pipeline(pipeline) do
-    Pipeline.insert_after(pipeline, TypeImports, [
+    pipeline
+    |> Pipeline.insert_after(TypeImports, [
       __MODULE__.Phase.AddFederatedTypes,
       __MODULE__.Phase.AddFederatedDirectives,
       __MODULE__.Phase.HideResolveReferenceFields
-      # __MODULE__.Phase.Validation.KeyFieldsMustExist,
-      # __MODULE__.Phase.Validation.KeyFieldsMustBeValidWhenExtends
+    ])
+    |> Pipeline.insert_after(FieldImports, [
+      __MODULE__.Phase.Validation.KeyFieldsMustExist
     ])
   end
 

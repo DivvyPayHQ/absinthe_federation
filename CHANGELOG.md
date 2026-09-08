@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+- **BREAKING**: [Fix and re-enable the `@key` validation phase](https://github.com/DivvyPayHQ/absinthe_federation/pull/141)
+
+  > With this change, the phase `KeyFieldsMustExist` runs again, which was previously disabled in
+  > [#54](https://github.com/DivvyPayHQ/absinthe_federation/pull/54). A nested `@key` field made schema compilation
+  > fail. This release corrects that fault.
+  >
+  > Since the validation was off for key field declarations, **invalid declarations will now fail to compile**. Each
+  > error gives the name of the bad field. To correct the error, add the missing field, or remove the field from the
+  > `@key` directive or the `key_fields/1` notation. Some example errors that are now possible:
+  >
+  > - A key field that does not exist on the object: `The @key "secondaryId" does not exist in :user object.`
+  > - A nested key field that does not exist: `The field "changeName" of @key "..." does not exist.`
+  > - An intermediate field that is not an object: `The object "name" of @key "name { id }" does not exist.`
+  > - An interface or union field in a `@key`: `The field "variation" of @key "variation { id }" is an interface type and cannot be part of a @key.`
+  >   Apollo Federation does not permit these types in a `@key` (`KEY_FIELDS_SELECT_INVALID_TYPE`).
+  >
+  > Additionally, two usages that failed before are now correct, as the spec permits them:
+  >
+  > - A nullable key field is permitted, because the spec does not make `@key` fields non-null.
+  > - A `camelCase` nested key field is permitted when the object field has more than one word.
+  >   For example, `@key(fields: "productVariation { id }")` is correct for `field :product_variation, ...`.
+  >
+  > Finally, the `KeyFieldsMustBeValidWhenExtends` validation phase is removed. It made every `@key` field of an
+  > `extends` type use `external()`, which is a Federation v1 rule. Federation v2 dropped it, and Apollo now
+  > discourages `@external` on key fields. Apollo composition accepts an `extends` type whose key fields have no
+  > `@external`, so the phase would reject valid subgraphs. The phase was already disabled, so existing schemas are
+  > not affected unless your code refers to the module directly.
+
 - **BREAKING**: [Raise when an entity's struct name matches no schema type](https://github.com/DivvyPayHQ/absinthe_federation/pull/136)
 
   > The `_Entity` union now checks that the derived name is a type in the schema first, and if it's not, it raises a

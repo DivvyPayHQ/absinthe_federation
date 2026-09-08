@@ -1,8 +1,6 @@
 defmodule Absinthe.Federation.Schema.KeyFieldsMustExistTest do
   use Absinthe.Federation.Case, async: true
 
-  @moduletag :skip
-
   @valid_schema """
     defmodule ValidSchema do
       use Absinthe.Schema
